@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>RallyOS - Documentación</title>
+  
+  <!-- Favicon con logo -->
+  <link rel="icon" type="image/jpeg" href="icon.jpeg">
+  
+  <style>
+    /* ============================================
+       RALLYOS LIGHT THEME - Based on ui/theme.json
+       ============================================ */
+    :root {
+      /* Primary - Teal */
+      --primary: #14B8A6;
+      --on-primary: #FFFFFF;
+      --primary-container: #CCFBF1;
+      --on-primary-container: #115E59;
+      
+      /* Secondary - Green */
+      --secondary: #2D6A4F;
+      --on-secondary: #FFFFFF;
+      --secondary-container: #A7F3D0;
+      --on-secondary-container: #064E3B;
+      
+      /* Tertiary - Amber */
+      --tertiary: #F59E0B;
+      --on-tertiary: #FFFFFF;
+      --tertiary-container: #FEF3C7;
+      --on-tertiary-container: #92400E;
+      
+      /* Surface */
+      --background: #F1F5F9;
+      --on-background: #0F172A;
+      --surface: #F1F5F9;
+      --on-surface: #0F172A;
+      --outline: #94A3B8;
+      
+      /* Docsify overrides */
+      --theme-color: var(--primary);
+      --sidebar-width: 280px;
+      --content-max-width: 900px;
+      --heading-color: var(--on-background);
+      --text-color: var(--on-surface);
+      --link-color: var(--primary);
+      --link-hover-color: var(--on-primary-container);
+      --border-color: var(--outline);
+      --navbar-bg: var(--primary);
+      --navbar-active-color: var(--on-primary);
+      --navbar-section-tag-color: var(--on-primary);
+    }
+
+    /* ============================================
+       TYPOGRAPHY
+       ============================================ */
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background: var(--background);
+      color: var(--on-background);
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+      color: var(--heading-color);
+      font-weight: 600;
+    }
+
+    h1 { color: var(--primary); }
+    h2 { border-bottom: 2px solid var(--primary); padding-bottom: 0.3em; }
+    h3 { color: var(--secondary); }
+
+    /* ============================================
+       LINKS
+       ============================================ */
+    .markdown-section a {
+      color: var(--primary);
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+      transition: all 0.2s ease;
+    }
+
+    .markdown-section a:hover {
+      color: var(--on-primary-container);
+      border-bottom-color: var(--primary);
+    }
+
+    /* ============================================
+       SIDEBAR
+       ============================================ */
+    .sidebar {
+      background: var(--surface);
+      border-right: 1px solid var(--outline);
+    }
+
+    .sidebar-toggle {
+      background: var(--primary) !important;
+      color: var(--on-primary) !important;
+    }
+
+    .sidebar-toggle span {
+      border-color: var(--on-primary) !important;
+    }
+
+    .sidebar-nav ul li a {
+      color: var(--on-surface);
+      transition: all 0.2s ease;
+    }
+
+    .sidebar-nav ul li a:hover,
+    .sidebar-nav ul li.active > a {
+      color: var(--primary);
+      background: var(--primary-container);
+    }
+
+    .sidebar-nav > ul > li > a {
+      font-weight: 600;
+      color: var(--secondary);
+    }
+
+    /* ============================================
+       CONTENT
+       ============================================ */
+    .markdown-section {
+      padding: 2rem 3rem;
+      max-width: var(--content-max-width);
+    }
+
+    /* ============================================
+       CODE
+       ============================================ */
+    .markdown-section code {
+      background: var(--primary-container);
+      color: var(--on-primary-container);
+      border-radius: 4px;
+      padding: 0.2em 0.4em;
+      font-size: 0.9em;
+      font-weight: 500;
+    }
+
+    .markdown-section pre {
+      background: #1E293B;
+      border-radius: 12px;
+      border: 1px solid var(--outline);
+      overflow: hidden;
+    }
+
+    .markdown-section pre code {
+      background: transparent;
+      color: #E2E8F0;
+      padding: 0;
+      font-size: 0.9em;
+    }
+
+    /* Code copy button */
+    .docsify-copy-code-button {
+      background: var(--primary) !important;
+      color: var(--on-primary) !important;
+      border-radius: 4px !important;
+    }
+
+    /* ============================================
+       TABLES
+       ============================================ */
+    .markdown-section table {
+      border-collapse: collapse;
+      width: 100%;
+      margin: 1.5em 0;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--outline);
+    }
+
+    .markdown-section table th {
+      background: var(--primary);
+      color: var(--on-primary);
+      font-weight: 600;
+      text-align: left;
+      padding: 0.75em 1em;
+    }
+
+    .markdown-section table td {
+      border-bottom: 1px solid var(--outline);
+      padding: 0.75em 1em;
+      background: white;
+    }
+
+    .markdown-section table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .markdown-section table tr:nth-child(even) td {
+      background: var(--surface);
+    }
+
+    .markdown-section table tr:hover td {
+      background: var(--primary-container);
+    }
+
+    /* ============================================
+       BLOCKQUOTES
+       ============================================ */
+    .markdown-section blockquote {
+      border-left: 4px solid var(--primary);
+      background: var(--primary-container);
+      margin: 1.5em 0;
+      padding: 1em 1.5em;
+      border-radius: 0 8px 8px 0;
+      color: var(--on-primary-container);
+    }
+
+    .markdown-section blockquote p:last-child {
+      margin-bottom: 0;
+    }
+
+    /* ============================================
+       NAVBAR
+       ============================================ */
+    .navbar {
+      background: var(--primary);
+      border-bottom: none;
+    }
+
+    .navbar a {
+      color: var(--on-primary) !important;
+    }
+
+    .navbar a:hover {
+      color: var(--primary-container) !important;
+    }
+
+    /* ============================================
+       BUTTONS
+       ============================================ */
+    .pagination-item {
+      background: var(--primary);
+      color: var(--on-primary);
+      border-radius: 8px;
+    }
+
+    .pagination-item:hover {
+      background: var(--on-primary-container);
+    }
+
+    /* ============================================
+       SEARCH
+       ============================================ */
+    .search input {
+      background: white;
+      border: 1px solid var(--outline);
+      border-radius: 8px;
+      color: var(--on-surface);
+    }
+
+    .search input:focus {
+      border-color: var(--primary);
+      outline: none;
+    }
+
+    /* ============================================
+       PROGRESS BAR
+       ============================================ */
+    .docsify-progress-bar {
+      background: var(--primary-container);
+    }
+
+    .docsify-progress-bar-inner {
+      background: var(--primary);
+    }
+
+    /* ============================================
+       CUSTOM COMPONENTS
+       ============================================ */
+    .status-badge {
+      display: inline-block;
+      padding: 0.25em 0.75em;
+      border-radius: 9999px;
+      font-size: 0.75em;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .status-done {
+      background: var(--secondary-container);
+      color: var(--on-secondary-container);
+    }
+
+    .status-pending {
+      background: var(--tertiary-container);
+      color: var(--on-tertiary-container);
+    }
+
+    .status-warning {
+      background: #FEE2E2;
+      color: #991B1B;
+    }
+
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1rem;
+      margin: 1.5rem 0;
+    }
+
+    .card {
+      background: white;
+      border: 1px solid var(--outline);
+      border-radius: 12px;
+      padding: 1.25rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      transition: all 0.2s ease;
+    }
+
+    .card:hover {
+      border-color: var(--primary);
+      box-shadow: 0 4px 12px rgba(20, 184, 166, 0.15);
+      transform: translateY(-2px);
+    }
+
+    .card h3 {
+      margin: 0 0 0.5em 0;
+      color: var(--secondary);
+    }
+
+    .card p {
+      margin: 0;
+      color: var(--on-surface);
+      opacity: 0.8;
+      font-size: 0.9em;
+    }
+
+    .card .emoji {
+      font-size: 2em;
+      margin-bottom: 0.5em;
+    }
+
+    .emoji-header {
+      font-size: 2.5em;
+      margin-bottom: 0.5em;
+    }
+
+    /* ============================================
+       MERMAID DIAGRAMS
+       ============================================ */
+    .mermaid {
+      background: white;
+      border-radius: 12px;
+      padding: 1rem;
+      border: 1px solid var(--outline);
+    }
+
+    /* ============================================
+       RESPONSIVE
+       ============================================ */
+    @media (max-width: 768px) {
+      .markdown-section {
+        padding: 1.5rem;
+      }
+    }
+  </style>
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/docsify@4/themes/vue.css">
+</head>
+<body>
+  <div id="app"></div>
+
+  <script>
+    window.$docsify = {
+      name: '<img src="logo.png" alt="RallyOS" height="32">',
+      repo: 'https://github.com/felipe90/rallyOS-app',
+      loadSidebar: true,
+      subMaxLevel: 3,
+      auto2top: true,
+      coverpage: false,
+      search: {
+        placeholder: 'Buscar...',
+        noData: 'Sin resultados',
+        depth: 3
+      },
+      copyCode: {
+        buttonText: '📋 Copiar',
+        errorText: '❌ Error',
+        successText: '✅ Copiado!'
+      },
+      pagination: {
+        previousText: '◀ Anterior',
+        nextText: 'Siguiente ▶',
+        crossChapter: true
+      },
+      progress: {
+        color: '#14B8A6',
+        size: '3px'
+      },
+      markdown: {
+        renderer: {
+          table: function(table) {
+            return '<div class="table-wrapper"><table>' + table + '</table></div>';
+          }
+        }
+      }
+    };
+  </script>
+
+  <!-- Docsify core -->
+  <script src="//cdn.jsdelivr.net/npm/docsify@4/lib/docsify.min.js"></script>
+  
+  <!-- Docsify plugins -->
+  <script src="//cdn.jsdelivr.net/npm/docsify@4/lib/plugins/search.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/docsify@4/lib/plugins/emoji.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/docsify-pagination@2/dist/docsify-pagination.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/prismjs@1/components/prism-bash.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/prismjs@1/components/prism-sql.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/prismjs@1/components/prism-json.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/prismjs@1/components/prism-yaml.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/docsify-copy-code@2/dist/docsify-copy-code.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/docsify-progress@latest/dist/docsify-progress.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/docsify-tabs@1/dist/docsify-tabs.min.js"></script>
+  
+  <!-- Mermaid for diagrams -->
+  <script src="//cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script>
+    mermaid.initialize({ startOnLoad: true, theme: 'default' });
+  </script>
+</body>
+</html>
