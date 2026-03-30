@@ -13,3 +13,7 @@ supabase/.temp/
 # OS
 .DS_Store
 *.local
+
+# Knowledge Base (Symlinks)
+.ai/
+docs/
