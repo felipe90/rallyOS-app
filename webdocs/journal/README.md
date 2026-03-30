@@ -6,13 +6,13 @@ Registro de sesiones de desarrollo.
 
 ### Issues Resueltos
 
-| Issue | Estado |
-|-------|--------|
-| `elo_history` table faltante | ✅ Fixed |
-| `entry_status` faltante | ✅ Fixed |
-| Offline sync triggers | ✅ Fixed |
-| ELO calculation | ✅ Fixed |
-| Bracket advancement | ✅ Fixed |
+```yaml
+elo_history table faltante: ✅ Fixed
+entry_status faltante:      ✅ Fixed
+Offline sync triggers:      ✅ Fixed
+ELO calculation:            ✅ Fixed
+Bracket advancement:         ✅ Fixed
+```
 
 ### Documentación Creada
 

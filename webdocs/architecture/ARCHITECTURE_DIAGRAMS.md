@@ -190,13 +190,13 @@ NEXT_MATCH_ID links:
 
 ## Key Triggers Reference
 
-| Trigger | Table | Event | Purpose |
-|---------|-------|-------|---------|
-| `trg_matches_conflict_resolution` | matches | BEFORE UPDATE | Time-tampering protection |
-| `trg_scores_conflict_resolution` | scores | BEFORE UPDATE | Time-tampering protection |
-| `trg_match_completion` | matches | AFTER UPDATE | ELO calculation |
-| `trg_advance_bracket` | matches | AFTER UPDATE | Winner advancement |
-| `trg_tournament_created_assign_organizer` | tournaments | AFTER INSERT | Auto-assign creator |
+```yaml
+trg_matches_conflict_resolution:     matches,  BEFORE UPDATE, Time-tampering protection
+trg_scores_conflict_resolution:     scores,   BEFORE UPDATE, Time-tampering protection
+trg_match_completion:               matches,  AFTER UPDATE, ELO calculation
+trg_advance_bracket:               matches,  AFTER UPDATE, Winner advancement
+trg_tournament_created_assign_organizer: tournaments, AFTER INSERT, Auto-assign creator
+```
 
 ## ELO Calculation Formula
 

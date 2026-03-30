@@ -12,10 +12,11 @@ Los triggers usan `SECURITY DEFINER` para bypasear RLS cuando necesitan escribir
 
 ## Modelo de Seguridad
 
-| Tabla | Client SELECT | Client INSERT | Client UPDATE | Trigger |
-|-------|--------------|---------------|--------------|---------|
-| `elo_history` | ✅ Todos | ❌ Bloqueado | ❌ Bloqueado | ✅ |
-| `scores` | ✅ Todos | ✅ Solo referee | ✅ Solo referee | ✅ |
-| `matches` | ✅ Staff | ✅ | ✅ Staff | ✅ |
-| `athlete_stats` | ✅ Todos | ❌ | ❌ | ✅ |
-| `tournament_entries` | ✅ | ✅ | ✅ Owner/Org | ✅ |
+```yaml
+Tabla:              SELECT:    INSERT:         UPDATE:
+elo_history:        Todos,    Bloqueado,     Bloqueado  (Trigger only)
+scores:            Todos,    Solo referee,  Solo referee  (Trigger)
+matches:            Staff,    Yes,           Staff       (Trigger)
+athlete_stats:     Todos,    Bloqueado,     Bloqueado   (Trigger)
+tournament_entries: Todos,   Yes,           Owner/Org   (Trigger)
+```

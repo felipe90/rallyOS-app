@@ -78,15 +78,15 @@ supabase/tests/security_tests.sql
 
 ### Security Test Results
 
-| Test | Result |
-|------|--------|
-| TEST 1: Score RLS | ✅ PASS |
-| TEST 2: ELO History Immutability | ✅ PASS |
-| TEST 3: PII Leakage | ✅ PASS |
-| TEST 4: Time-Tampering | ✅ PASS (after fix) |
-| TEST 5: Staff Self-Elevation | ✅ PASS |
-| TEST 6: Entry Status RLS | ✅ PASS |
-| TEST 7: Entry Status Columns | ✅ PASS |
+```yaml
+TEST 1: Score RLS               ✅ PASS
+TEST 2: ELO History Immutability ✅ PASS
+TEST 3: PII Leakage             ✅ PASS
+TEST 4: Time-Tampering          ✅ PASS (after fix)
+TEST 5: Staff Self-Elevation    ✅ PASS
+TEST 6: Entry Status RLS        ✅ PASS
+TEST 7: Entry Status Columns    ✅ PASS
+```
 
 ### Next Steps
 
@@ -118,11 +118,11 @@ New Rating = Old Rating + K * (Actual Score - Expected Score)
 ```
 
 #### K-Factor Implementation
-| Matches Played | K-Factor |
-|----------------|----------|
-| 0-29 | 32 |
-| 30-99 | 24 |
-| 100+ | 16 |
+```yaml
+0-29 matches:   K = 32
+30-99 matches:  K = 24
+100+ matches:   K = 16
+```
 
 ### What Happens on Match Completion
 
@@ -148,14 +148,14 @@ openspec/changes/
 
 ### Verification
 
-| Check | Result |
-|-------|--------|
-| Trigger created on matches | ✅ |
-| Winner gets positive ELO | ✅ (+8 for test match) |
-| Loser gets negative ELO | ✅ (-8 for test match) |
-| K-factor varies by matches | ✅ |
-| elo_history entries created | ✅ (2 entries per match) |
-| athlete_stats updated | ✅ |
+```yaml
+Trigger created on matches:   ✅
+Winner gets positive ELO:    ✅ (+8 for test match)
+Loser gets negative ELO:     ✅ (-8 for test match)
+K-factor varies by matches:   ✅
+elo_history entries created:  ✅ (2 entries per match)
+athlete_stats updated:       ✅
+```
 
 ### Test Example
 - Winner: 1000 ELO → 1008 (+8)
@@ -174,15 +174,15 @@ Implementamos documentación completa para no perdernos en el proyecto.
 
 ### Documentos Creados
 
-| Archivo | Descripción |
-|---------|-------------|
-| `docs/adr/001-elo-ledger.md` | ADR: ELO como ledger append-only |
-| `docs/adr/002-bracket-linked-list.md` | ADR: Bracket como linked list |
-| `docs/adr/003-rls-security.md` | ADR: RLS con SECURITY DEFINER |
-| `docs/MIGRATION_INDEX.md` | Índice de todas las migraciones |
-| `docs/ARCHITECTURE_DIAGRAMS.md` | Diagramas de flujo y seguridad |
-| `docs/ER_DIAGRAM.md` | Diagrama ER completo |
-| `docs/SEQUENCE_DIAGRAMS.md` | Diagramas de secuencia de negocio |
+```yaml
+docs/adr/001-elo-ledger.md:      ADR: ELO como ledger
+docs/adr/002-bracket-linked-list.md: ADR: Bracket como linked list
+docs/adr/003-rls-security.md:    ADR: RLS con SECURITY DEFINER
+docs/MIGRATION_INDEX.md:         Índice de migraciones
+docs/ARCHITECTURE_DIAGRAMS.md:   Diagramas de flujo
+docs/ER_DIAGRAM.md:             Diagrama ER
+docs/SEQUENCE_DIAGRAMS.md:      Diagramas de secuencia
+```
 
 ### Diagramas de Secuencia Implementados
 
@@ -214,12 +214,12 @@ Agregamos branding visual a la documentación local con el logo de RallyOS.
 
 ### Cambios Realizados
 
-| Archivo | Cambio |
-|---------|--------|
-| `webdocs/icon.jpeg` | Copiado desde `ui/` |
-| `webdocs/logo.png` | Copiado desde `ui/` |
-| `webdocs/index.html` | Favicon actualizado + nombre con logo |
-| `webdocs/README.md` | Header con logo centrado |
+```yaml
+webdocs/icon.jpeg:   Copiado desde ui/
+webdocs/logo.png:    Copiado desde ui/
+webdocs/index.html:  Favicon + logo en navbar
+webdocs/README.md:   Header con logo centrado
+```
 
 ### Detalles Técnicos
 

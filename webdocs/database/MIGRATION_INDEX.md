@@ -4,23 +4,25 @@ Estado actualizado: 2026-03-30
 
 ## Resumen
 
-| Total | Completadas | Pendientes |
-|-------|-------------|------------|
-| 7 | 7 | 0 |
+```yaml
+Total: 7
+Completadas: 7
+Pendientes: 0
+```
 
 ---
 
 ## Migration Map
 
-| # | Archivo | Feature | Propósito | Estado | Rollback |
-|---|---------|---------|-----------|--------|----------|
-| 00 | `00000000000000_init_schema.sql` | Core Schema | Tablas base, enums, FK constraints | ✅ | ❌ |
-| 01 | `00000000000001_security_policies.sql` | Security | RLS policies, triggers base, views | ✅ | ✅ |
-| 02 | `00000000000002_add_elo_history.sql` | ELO Ledger | Tabla elo_history, índices, enum | ✅ | ✅ |
-| 03 | `00000000000003_add_entry_status.sql` | Payment State | entry_status enum, columns, RLS | ✅ | ✅ |
-| 04 | `00000000000004_fix_offline_sync_trigger.sql` | Sync Security | Triggers conflict resolution | ✅ | ✅ |
-| 05 | `00000000000005_implement_elo_calculation.sql` | ELO Calc | Trigger process_match_completion | ✅ | ✅ |
-| 06 | `00000000000006_bracket_advancement.sql` | Brackets | Trigger advance_bracket_winner | ✅ | ✅ |
+```yaml
+00: init_schema.sql                   - Core Schema
+01: security_policies.sql             - Security
+02: add_elo_history.sql               - ELO Ledger
+03: add_entry_status.sql              - Payment State
+04: fix_offline_sync_trigger.sql      - Sync Security
+05: implement_elo_calculation.sql     - ELO Calc
+06: bracket_advancement.sql           - Brackets
+```
 
 ---
 
@@ -28,7 +30,6 @@ Estado actualizado: 2026-03-30
 
 ### 00 - init_schema.sql
 **Feature**: Core Schema  
-**Creador**: Schema inicial  
 **Fecha**: Antes de SDD
 
 **Contenido**:
@@ -136,11 +137,11 @@ RETURNS TRIGGER SECURITY DEFINER
 ```
 
 **K-factor**:
-| Matches | K-factor |
-|---------|----------|
-| 0-29 | 32 |
-| 30-99 | 24 |
-| 100+ | 16 |
+```yaml
+0-29 matches:   32
+30-99 matches:  24
+100+ matches:   16
+```
 
 **Tests**: ✅ Verificado manualmente
 
@@ -166,11 +167,11 @@ RETURNS TRIGGER SECURITY DEFINER
 
 ## Pendientes de Implementación
 
-| # | Feature | Prioridad | Complejidad |
-|---|---------|-----------|-------------|
-| — | Double Elimination | Baja | Alta |
-| — | Round Robin | Baja | Alta |
-| — | Real-time subscriptions | Media | Media |
+```yaml
+Double Elimination:   Prioridad: Baja,  Complejidad: Alta
+Round Robin:         Prioridad: Baja,  Complejidad: Alta
+Real-time subs:      Prioridad: Media, Complejidad: Media
+```
 
 ---
 
@@ -194,8 +195,8 @@ psql ... -c "SELECT tablename, policyname, cmd FROM pg_policies;"
 
 ## ADR Reference
 
-| Decision | ADR |
-|----------|-----|
-| ELO como ledger | `docs/adr/001-elo-ledger.md` |
-| Bracket como linked list | `docs/adr/002-bracket-linked-list.md` |
-| RLS con SECURITY DEFINER | `docs/adr/003-rls-security.md` |
+```yaml
+ELO como ledger:          adr/001-elo-ledger.md
+Bracket como linked list: adr/002-bracket-linked-list.md
+RLS con SECURITY DEFINER: adr/003-rls-security.md
+```
