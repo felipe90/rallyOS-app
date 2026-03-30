@@ -162,4 +162,44 @@ openspec/changes/
 
 ---
 
+## 2026-03-30 (Tarde 2) — Documentación de Arquitectura
+
+### Session Overview
+
+Implementamos documentación completa para no perdernos en el proyecto.
+
+### Documentos Creados
+
+| Archivo | Descripción |
+|---------|-------------|
+| `docs/adr/001-elo-ledger.md` | ADR: ELO como ledger append-only |
+| `docs/adr/002-bracket-linked-list.md` | ADR: Bracket como linked list |
+| `docs/adr/003-rls-security.md` | ADR: RLS con SECURITY DEFINER |
+| `docs/MIGRATION_INDEX.md` | Índice de todas las migraciones |
+| `docs/ARCHITECTURE_DIAGRAMS.md` | Diagramas de flujo y seguridad |
+| `docs/ER_DIAGRAM.md` | Diagrama ER completo |
+| `docs/SEQUENCE_DIAGRAMS.md` | Diagramas de secuencia de negocio |
+
+### Diagramas de Secuencia Implementados
+
+1. **ELO Calculation on Match Completion** — Flujo completo
+2. **Bracket Advancement** — Winner avanza al siguiente match
+3. **Entry Registration with Payment** — Flujo completo
+4. **Tournament Creation with Auto-Organizer** — Trigger automático
+5. **Offline Sync Conflict Resolution** — Time-tampering protection
+6. **Match Score Update (RLS)** — Verificación de permisos
+
+### Reglas Establecidas
+
+```
+Después de cada change:
+
+1. Actualizar docs/ARCHITECTURE_DIAGRAMS.md
+2. Crear ADR en docs/adr/ si hay decisión nueva
+3. Comment WHY en código complejo
+4. Tests para todo lo nuevo
+```
+
+---
+
 *Journal entry updated: 2026-03-30*
