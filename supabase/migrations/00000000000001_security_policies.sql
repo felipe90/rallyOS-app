@@ -16,7 +16,7 @@ SELECT
     p.id AS person_id,
     p.first_name,
     COALESCE(p.nickname, p.last_name) AS display_name,
-    ast.last_known_elo AS current_elo,
+    ast.current_elo AS current_elo,
     ast.sport_id
 FROM persons p
 JOIN athlete_stats ast ON p.id = ast.person_id;
@@ -26,7 +26,8 @@ JOIN athlete_stats ast ON p.id = ast.person_id;
 -- ============================================
 -- Enable RLS on critical tables
 ALTER TABLE scores ENABLE ROW LEVEL SECURITY;
-ALTER TABLE elo_history ENABLE ROW LEVEL SECURITY;
+-- RLS for elo_history will be set up when the table is created (migration 00000000000002)
+-- ALTER TABLE elo_history ENABLE ROW LEVEL SECURITY;
 ALTER TABLE matches ENABLE ROW LEVEL SECURITY;
 
 -- POLICY 1: SCORES (Write restricted to the referee)
@@ -55,10 +56,11 @@ USING (
 );
 
 -- POLICY 2: ELO_HISTORY (Read-only for users, insert only via Trigger)
-CREATE POLICY "Elo history is read only for users" 
-ON elo_history
-FOR SELECT
-USING (true);
+-- Moved to migration 00000000000002_add_elo_history.sql
+-- CREATE POLICY "Elo history is read only for users" 
+-- ON elo_history
+-- FOR SELECT
+-- USING (true);
 -- Note: No INSERT policy is created. This blocks insertions from the RLS client.
 -- Database triggers bypass RLS if they use the SECURITY DEFINER function.
 

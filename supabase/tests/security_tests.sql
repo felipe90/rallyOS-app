@@ -8,7 +8,7 @@
 --
 -- HOW TO RUN:
 --   psql postgres://postgres:postgres@localhost:54322/postgres \
---       -f db/tests/security_tests.sql
+--       -f supabase/tests/security_tests.sql
 -- ============================================================
 
 \echo ''
@@ -169,6 +169,76 @@ WHERE tablename = 'tournament_staff';
 
 
 -- ────────────────────────────────────────
+-- TEST 6: ENTRY STATUS RLS POLICY
+-- Verifies that tournament_entries has proper UPDATE policy
+-- restricting status changes to entry owners or organizers.
+-- ────────────────────────────────────────
+\echo ''
+\echo '[TEST 6] Entry status RLS policy (owner/organizer UPDATE only)'
+
+SELECT
+    tablename,
+    policyname,
+    cmd,
+    roles,
+    qual
+FROM pg_policies
+WHERE tablename = 'tournament_entries'
+AND cmd = 'UPDATE'
+ORDER BY policyname;
+
+-- EXPECTED: At least 1 policy for UPDATE with auth.uid() checks
+-- If 0 rows → RLS policy for status updates is MISSING ❌
+
+SELECT
+  CASE
+    WHEN COUNT(*) > 0 THEN '✅ PASS: RLS UPDATE policy on tournament_entries exists'
+    ELSE '❌ FAIL: No UPDATE policy on tournament_entries — anyone can change entry status'
+  END AS result
+FROM pg_policies
+WHERE tablename = 'tournament_entries' AND cmd = 'UPDATE';
+
+
+-- ────────────────────────────────────────
+-- TEST 7: ENTRY STATUS COLUMN EXISTS
+-- Verifies the status column is properly typed and has correct default
+-- ────────────────────────────────────────
+\echo ''
+\echo '[TEST 7] Entry status column verification'
+
+-- Check status column exists with correct type
+SELECT
+  CASE
+    WHEN data_type = 'USER-DEFINED' AND column_default LIKE '%PENDING_PAYMENT%'
+    THEN '✅ PASS: status column exists with entry_status type and correct default'
+    ELSE '❌ FAIL: status column missing or incorrect type/default'
+  END AS result
+FROM information_schema.columns
+WHERE table_name = 'tournament_entries'
+AND column_name = 'status';
+
+-- Check fee_amount_snap column exists
+SELECT
+  CASE
+    WHEN COUNT(*) = 1 THEN '✅ PASS: fee_amount_snap column exists'
+    ELSE '❌ FAIL: fee_amount_snap column is MISSING'
+  END AS result
+FROM information_schema.columns
+WHERE table_name = 'tournament_entries'
+AND column_name = 'fee_amount_snap';
+
+-- Verify entry_status enum has all values
+SELECT
+  CASE
+    WHEN enumlabel IN ('PENDING_PAYMENT', 'CONFIRMED', 'CANCELLED') THEN '✅ ' || enumlabel
+    ELSE '❌ UNKNOWN: ' || enumlabel
+  END AS entry_status_values
+FROM pg_enum
+WHERE enumtypid = 'entry_status'::regtype
+ORDER BY enumsortorder;
+
+
+-- ────────────────────────────────────────
 -- SEED VERIFICATION QUERIES
 -- Confirm the seed data loaded correctly
 -- ────────────────────────────────────────
@@ -196,6 +266,14 @@ SELECT te.display_name, p.provider, p.amount / 100.0 AS amount_usd, p.status
 FROM payments p
 JOIN tournament_entries te ON te.id = p.tournament_entry_id
 ORDER BY te.display_name;
+
+\echo '[Verify] Entry status (expect: 4 CONFIRMED entries)'
+SELECT status, COUNT(*) as total FROM tournament_entries GROUP BY status;
+
+\echo '[Verify] Fee amount snapshots (expect: 2500 cents for all entries)'
+SELECT display_name, fee_amount_snap / 100.0 AS fee_usd
+FROM tournament_entries
+ORDER BY display_name;
 
 \echo ''
 \echo '=============================================='

@@ -61,13 +61,15 @@ VALUES
 
 -- ────────────────────────────────────────
 -- 6. TOURNAMENT ENTRIES (1 player = 1 entry in singles)
+-- All entries are CONFIRMED since payments succeeded
+-- fee_amount_snap = 2500 cents ($25.00 USD)
 -- ────────────────────────────────────────
-INSERT INTO tournament_entries (id, category_id, display_name, current_handicap)
+INSERT INTO tournament_entries (id, category_id, display_name, current_handicap, status, fee_amount_snap)
 VALUES
-  ('00000000-0000-0000-0002-000000000001', '00000000-0000-0000-0000-000000000020', 'Andres Rojas',  -2),
-  ('00000000-0000-0000-0002-000000000002', '00000000-0000-0000-0000-000000000020', 'Carlos Perez',   2),
-  ('00000000-0000-0000-0002-000000000003', '00000000-0000-0000-0000-000000000020', 'Miguel Torres',  0),
-  ('00000000-0000-0000-0002-000000000004', '00000000-0000-0000-0000-000000000020', 'Felipe Wolf',   -3);
+  ('00000000-0000-0000-0002-000000000001', '00000000-0000-0000-0000-000000000020', 'Andres Rojas',  -2, 'CONFIRMED', 2500),
+  ('00000000-0000-0000-0002-000000000002', '00000000-0000-0000-0000-000000000020', 'Carlos Perez',   2, 'CONFIRMED', 2500),
+  ('00000000-0000-0000-0002-000000000003', '00000000-0000-0000-0000-000000000020', 'Miguel Torres',  0, 'CONFIRMED', 2500),
+  ('00000000-0000-0000-0002-000000000004', '00000000-0000-0000-0000-000000000020', 'Felipe Wolf',   -3, 'CONFIRMED', 2500);
 
 INSERT INTO entry_members (entry_id, person_id)
 VALUES
