@@ -4,9 +4,9 @@ Documentación de la arquitectura técnica del sistema.
 
 ## Índice
 
-- [ER Diagram](er-diagram) - Modelo de entidades y relaciones
-- [Diagramas de Flujo](diagrams) - Diagramas de arquitectura
-- [Secuencias](sequences) - Diagramas de secuencia de negocio
+- [ER Diagram](ER_DIAGRAM) - Modelo de entidades y relaciones
+- [Diagramas de Flujo](ARCHITECTURE_DIAGRAMS) - Diagramas de arquitectura
+- [Secuencias](SEQUENCE_DIAGRAMS) - Diagramas de secuencia de negocio
 
 ## Stack Tecnológico
 
