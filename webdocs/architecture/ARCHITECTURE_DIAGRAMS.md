@@ -82,7 +82,7 @@ erDiagram
     TOURNAMENT_ENTRIES ||--o{ PAYMENTS : "has"
     
     MATCHES ||--|| SCORES : "has one"
-    MATCHES ||--o{ MATCHES : "advances to" {Note: next_match_id}
+    MATCHES ||--o{ MATCHES : "next_match_id"
     
     ELO_HISTORY }o--|| PERSONS : "records for"
     ELO_HISTORY }o--|| MATCHES : "from match"
@@ -146,6 +146,8 @@ graph LR
     end
 
     A --> B
+    
+    C -->|Yes| F
     
     C -->|Yes| F
     D -->|Yes| H

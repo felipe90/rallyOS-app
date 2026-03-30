@@ -64,7 +64,7 @@ erDiagram
 erDiagram
     A ||--o{ B : "one-to-many"
     A ||--|| B : "one-to-one"
-    A }o--o{ B : "many-to-many"
+    A }o--o| B : "many-to-many"
     A ||--{ B : "one-to-many (not null)"
 ```
 
