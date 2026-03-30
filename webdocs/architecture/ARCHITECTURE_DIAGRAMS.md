@@ -126,39 +126,35 @@ sequenceDiagram
 ## RLS Security Model
 
 ```mermaid
-graph LR
-    subgraph Client_Requests
+flowchart TB
+    subgraph Client
         A[Client App]
     end
 
-    subgraph RLS_Layer
-        B{RLS Policy Check}
-        C[auth.uid() = referee_id?]
-        D[auth.uid() in tournament_staff?]
-        E[Entry owner?]
-    end
-
-    subgraph Protected_Operations
-        F[Write to scores]
-        G[Write to elo_history]
-        H[Write to matches]
-        I[Write to entries]
-    end
-
     A --> B
-    
-    C -->|Yes| F
-    
-    C -->|Yes| F
-    D -->|Yes| H
-    E -->|Yes| I
-    
-    F -->|SECURITY DEFINER| G
-    H -->|SECURITY DEFINER| G
-    I -->|Owner/Organizer| I
 
-    style G fill:#ffcdd2
-    style Protected_Operations fill:#fff8e1
+    subgraph RLS
+        C{Scores?<br/>referee_id?}
+        D{Scores?<br/>staff?}
+        E{Matches?<br/>staff?}
+        F{Entries?<br/>owner/org?}
+    end
+
+    B --> C
+    B --> D
+    B --> E
+    B --> F
+
+    C -->|Yes| G[Write scores]
+    D -->|Yes| H[Write matches]
+    E -->|Yes| H
+    F -->|Yes| I[Write entries]
+
+    G --> J[elo_history<br/>SECURITY DEFINER]
+    H --> J
+    I --> I
+
+    style J fill:#ffcdd2
 ```
 
 ## Bracket Structure (Single Elimination)
