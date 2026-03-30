@@ -5,9 +5,9 @@
 
 - **Arquitectura**
   - [Visión General](architecture/README)
-  - [ER Diagram](architecture/er-diagram)
-  - [Diagramas de Flujo](architecture/diagrams)
-  - [Secuencias](architecture/sequences)
+  - [ER Diagram](architecture/ER_DIAGRAM)
+  - [Diagramas de Flujo](architecture/ARCHITECTURE_DIAGRAMS)
+  - [Secuencias](architecture/SEQUENCE_DIAGRAMS)
 
 - **Base de Datos**
   - [Índice de Migraciones](database/migrations)

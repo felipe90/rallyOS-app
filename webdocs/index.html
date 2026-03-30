@@ -417,8 +417,16 @@
   
   <!-- Mermaid for diagrams -->
   <script src="//cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/docsify-mermaid@2/dist/docsify-mermaid.js"></script>
   <script>
-    mermaid.initialize({ startOnLoad: true, theme: 'default' });
+    if (typeof mermaid !== 'undefined') {
+      mermaid.initialize({ 
+        startOnLoad: true, 
+        theme: 'default',
+        securityLevel: 'loose'
+      });
+    }
+    document.getElementById('app').dataset.mermaid = 'true';
   </script>
 </body>
 </html>
