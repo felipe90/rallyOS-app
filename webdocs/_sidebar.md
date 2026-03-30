@@ -11,7 +11,7 @@
 
 - **Base de Datos**
   - [Índice de Migraciones](database/MIGRATION_INDEX)
-  - [Schema Completo](database/schema)
+  - [Schema SQL](database/schema.sql)
 
 - **Seguridad**
   - [Modelo RLS](security/rlsmodel)
