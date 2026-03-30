@@ -10,13 +10,15 @@ Documentación de la arquitectura técnica del sistema.
 
 ## Stack Tecnológico
 
-| Capa | Tecnología |
-|------|------------|
-| Mobile | Expo (React Native) |
-| Backend | Supabase (PostgreSQL + Auth + Realtime) |
-| State | TanStack Query v5 |
-| Offline | AsyncStorage + SQLite |
-| Styling | NativeWind (Tailwind CSS) |
+```yaml
+Mobile:    Expo (React Native) + NativeWind
+Backend:   Supabase (PostgreSQL + Auth + Realtime)
+State:     TanStack Query v5 + Zustand
+Offline:   AsyncStorage + SQLite
+Styling:  NativeWind (Tailwind CSS)
+Auth:      Supabase Auth
+Payments:  Stripe + MercadoPago
+```
 
 ## Principios
 
