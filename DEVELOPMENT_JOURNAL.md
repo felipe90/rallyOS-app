@@ -86,11 +86,80 @@ supabase/tests/security_tests.sql
 
 ### Next Steps
 
-1. Implement ELO calculation in `process_match_completion` trigger
+1. ~~Implement ELO calculation in `process_match_completion` trigger~~ ✅ DONE
 2. Implement bracket advancement logic
 3. Start mobile app implementation
 4. Implement payment webhook handlers
 
 ---
 
-*Journal entry created: 2026-03-30*
+## 2026-03-30 (Tarde) — ELO Calculation Implemented
+
+### Session Overview
+
+Implemented the ELO calculation trigger that automatically updates player ratings when matches finish.
+
+### Implementation Details
+
+#### `process_match_completion` Trigger
+- **Location**: `supabase/migrations/00000000000005_implement_elo_calculation.sql`
+- **Security**: SECURITY DEFINER (bypasses RLS for elo_history inserts)
+- **Trigger**: Fires AFTER UPDATE on `matches` when status changes to FINISHED
+
+#### ELO Algorithm
+```
+Expected Score = 1 / (1 + 10^((Opponent - Rating) / 400))
+K-Factor = 32 (<30 matches), 24 (30-100 matches), 16 (>100 matches)
+New Rating = Old Rating + K * (Actual Score - Expected Score)
+```
+
+#### K-Factor Implementation
+| Matches Played | K-Factor |
+|----------------|----------|
+| 0-29 | 32 |
+| 30-99 | 24 |
+| 100+ | 16 |
+
+### What Happens on Match Completion
+
+1. Get winner/loser from entry members
+2. Fetch current ELO and match count for both
+3. Calculate expected score using opponent's rating
+4. Calculate ELO change using K-factor
+5. Insert `elo_history` entries for both players
+6. Update `athlete_stats` for both players
+
+### Files Created
+
+```
+supabase/migrations/
+└── 00000000000005_implement_elo_calculation.sql
+
+openspec/changes/
+└── implement-elo-calculation/
+    ├── proposal.md
+    ├── spec.md
+    └── tasks.md
+```
+
+### Verification
+
+| Check | Result |
+|-------|--------|
+| Trigger created on matches | ✅ |
+| Winner gets positive ELO | ✅ (+8 for test match) |
+| Loser gets negative ELO | ✅ (-8 for test match) |
+| K-factor varies by matches | ✅ |
+| elo_history entries created | ✅ (2 entries per match) |
+| athlete_stats updated | ✅ |
+
+### Test Example
+- Winner: 1000 ELO → 1008 (+8)
+- Loser: 800 ELO → 792 (-8)
+- K-factor: 32 (0 matches played)
+- Expected score: 0.76
+- Change: 32 × (1 - 0.76) = 7.68 ≈ 8
+
+---
+
+*Journal entry updated: 2026-03-30*
