@@ -60,12 +60,12 @@ COMMUNITY_FEED:   id, tournament_id, event_type
 
 ## Cardinality Legend
 
-```mermaid
-erDiagram
-    A ||--o{ B : "one-to-many"
-    A ||--|| B : "one-to-one"
-    A }o--o| B : "many-to-many"
-    A ||--{ B : "one-to-many (not null)"
+```
+||--o{   one-to-many (nullable)
+||--||   one-to-one
+}o--o|   many-to-many
+||--{    one-to-many (required)
+}o--||   many-to-one
 ```
 
 ---
