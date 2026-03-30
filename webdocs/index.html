@@ -357,6 +357,12 @@
         padding: 1.5rem;
       }
     }
+
+    /* Hide default docsify sidebar link */
+    .sidebar-nav li:has(a[href="sidebar"]), 
+    .sidebar-nav a[href*="sidebar"] {
+      display: none !important;
+    }
   </style>
   <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/docsify@4/themes/vue.css">
 </head>
