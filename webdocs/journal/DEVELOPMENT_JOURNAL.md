@@ -1,5 +1,9 @@
 # RallyOS-App: Development Journal
 
+> **Único source of truth (SSO)** — Este es el journal oficial del proyecto.
+
+---
+
 ## 2026-03-30 — Architecture Review & Critical Fixes
 
 ### Session Overview

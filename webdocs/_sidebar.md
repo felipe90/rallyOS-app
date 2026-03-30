@@ -10,7 +10,7 @@
   - [Secuencias](architecture/SEQUENCE_DIAGRAMS)
 
 - **Base de Datos**
-  - [Índice de Migraciones](database/migrations)
+  - [Índice de Migraciones](database/MIGRATION_INDEX)
   - [Schema Completo](database/schema)
 
 - **Seguridad**

@@ -8,172 +8,53 @@
 
 ```mermaid
 erDiagram
-    SPORTS {
-        uuid id PK
-        text name
-        sport_scoring_system scoring_system
-        int default_points_per_set
-        int default_best_of_sets
-        timestamptz created_at
-    }
-
-    TOURNAMENTS {
-        uuid id PK
-        uuid sport_id FK
-        text name
-        tournament_status status
-        boolean handicap_enabled
-        boolean use_differential
-        timestamptz created_at
-    }
-
-    CATEGORIES {
-        uuid id PK
-        uuid tournament_id FK
-        text name
-        game_mode mode
-        int points_override
-        int sets_override
-        int elo_min
-        int elo_max
-        bracket_system bracket_system
-        timestamptz created_at
-    }
-
-    PERSONS {
-        uuid id PK
-        uuid user_id FK "nullable"
-        text first_name
-        text last_name
-        text nickname
-        timestamptz created_at
-    }
-
-    USERS {
-        uuid id PK "auth.users"
-    }
-
-    ATHLETE_STATS {
-        uuid id PK
-        uuid person_id FK
-        uuid sport_id FK
-        int current_elo
-        int matches_played
-    }
-
-    TOURNAMENT_STAFF {
-        uuid id PK
-        uuid tournament_id FK
-        uuid user_id FK
-        text role
-        timestamptz created_at
-    }
-
-    TOURNAMENT_ENTRIES {
-        uuid id PK
-        uuid category_id FK
-        text display_name
-        int current_handicap
-        entry_status status
-        int fee_amount_snap
-        timestamptz created_at
-    }
-
-    ENTRY_MEMBERS {
-        uuid id PK
-        uuid entry_id FK
-        uuid person_id FK
-    }
-
-    MATCHES {
-        uuid id PK
-        uuid category_id FK
-        uuid entry_a_id FK "nullable"
-        uuid entry_b_id FK "nullable"
-        uuid referee_id FK "nullable"
-        uuid next_match_id FK "nullable"
-        text court_id
-        match_status status
-        text round_name
-        timestamptz started_at
-        timestamptz ended_at
-        timestamptz local_updated_at
-        timestamptz created_at
-    }
-
-    SCORES {
-        uuid id PK
-        uuid match_id FK "unique"
-        int current_set
-        int points_a
-        int points_b
-        jsonb sets_json
-        timestamptz local_updated_at
-        timestamptz created_at
-        timestamptz updated_at
-    }
-
-    ELO_HISTORY {
-        uuid id PK
-        uuid person_id FK
-        uuid sport_id FK
-        uuid match_id FK "nullable"
-        int previous_elo
-        int new_elo
-        int elo_change
-        elo_change_type change_type
-        timestamptz created_at
-    }
-
-    PAYMENTS {
-        uuid id PK
-        uuid tournament_entry_id FK
-        uuid user_id FK "nullable"
-        text provider
-        text provider_txn_id
-        int amount
-        text currency
-        payment_status status
-        timestamptz created_at
-        timestamptz updated_at
-    }
-
-    COMMUNITY_FEED {
-        uuid id PK
-        uuid tournament_id FK
-        text event_type
-        jsonb payload_json
-        timestamptz created_at
-    }
-
-    %% Relationships
-    SPORTS ||--o{ TOURNAMENTS : "defines"
-    SPORTS ||--o{ ATHLETE_STATS : "tracks"
-    SPORTS ||--o{ ELO_HISTORY : "records"
-
-    TOURNAMENTS ||--o{ CATEGORIES : "contains"
-    TOURNAMENTS ||--o{ TOURNAMENT_STAFF : "has"
-    TOURNAMENTS ||--o{ COMMUNITY_FEED : "generates"
-
-    CATEGORIES ||--o{ TOURNAMENT_ENTRIES : "registers"
-    CATEGORIES ||--o{ MATCHES : "organizes"
-
-    USERS ||--o{ PERSONS : "links to"
-    PERSONS ||--o{ ATHLETE_STATS : "has"
-    PERSONS ||--o{ ENTRY_MEMBERS : "belongs to"
-    PERSONS ||--o{ TOURNAMENT_STAFF : "works as"
-    PERSONS ||--o{ PAYMENTS : "pays"
-
-    TOURNAMENT_ENTRIES ||--o{ ENTRY_MEMBERS : "composed of"
-    TOURNAMENT_ENTRIES ||--o{ PAYMENTS : "has"
-
-    MATCHES ||--|| SCORES : "has one"
-    MATCHES ||--o{ MATCHES : "advances to" 
-    MATCHES ||--o{ ELO_HISTORY : "generates"
-
-    ELO_HISTORY }o--|| PERSONS : "for player"
-    ELO_HISTORY }o--|| MATCHES : "from match"
+    SPORTS ||--o{ TOURNAMENTS : defines
+    SPORTS ||--o{ ATHLETE_STATS : tracks
+    SPORTS ||--o{ ELO_HISTORY : records
+    
+    TOURNAMENTS ||--o{ CATEGORIES : contains
+    TOURNAMENTS ||--o{ TOURNAMENT_STAFF : has
+    TOURNAMENTS ||--o{ COMMUNITY_FEED : generates
+    
+    CATEGORIES ||--o{ TOURNAMENT_ENTRIES : registers
+    CATEGORIES ||--o{ MATCHES : organizes
+    
+    USERS ||--o{ PERSONS : links
+    PERSONS ||--o{ ATHLETE_STATS : has
+    PERSONS ||--o{ ENTRY_MEMBERS : belongs
+    PERSONS ||--o{ TOURNAMENT_STAFF : works
+    PERSONS ||--o{ PAYMENTS : pays
+    
+    TOURNAMENT_ENTRIES ||--o{ ENTRY_MEMBERS : composed
+    TOURNAMENT_ENTRIES ||--o{ PAYMENTS : has
+    
+    MATCHES ||--|| SCORES : has
+    MATCHES ||--o{ MATCHES : advances
+    
+    ELO_HISTORY }o--|| PERSONS : for
+    ELO_HISTORY }o--|| MATCHES : from
 ```
+
+---
+
+## Table Details
+
+| Table | Key Columns | Description |
+|-------|-------------|-------------|
+| **SPORTS** | id, name | Sporting disciplines (tennis, padel, etc.) |
+| **TOURNAMENTS** | id, sport_id, name, status | Tournament events |
+| **CATEGORIES** | id, tournament_id, name, mode | Age/skill divisions within tournaments |
+| **PERSONS** | id, user_id, first_name, last_name | User profiles |
+| **USERS** | id | Auth.users reference |
+| **ATHLETE_STATS** | id, person_id, sport_id, current_elo | Player statistics per sport |
+| **TOURNAMENT_STAFF** | id, tournament_id, user_id, role | Staff assignments |
+| **TOURNAMENT_ENTRIES** | id, category_id, display_name, status | Team/player registrations |
+| **ENTRY_MEMBERS** | id, entry_id, person_id | Team composition |
+| **MATCHES** | id, category_id, entry_a_id, entry_b_id, next_match_id | Match records |
+| **SCORES** | id, match_id, sets_json | Score tracking |
+| **ELO_HISTORY** | id, person_id, match_id, elo_change | Immutable ELO ledger |
+| **PAYMENTS** | id, tournament_entry_id, status | Payment records |
+| **COMMUNITY_FEED** | id, tournament_id, event_type | Activity feed |
 
 ---
 
