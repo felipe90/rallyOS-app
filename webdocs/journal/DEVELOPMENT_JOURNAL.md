@@ -352,15 +352,41 @@ CU-10: Jugador Ve Feed de Actividad
 openspec/changes/mvp-tournament-flow/
 ├── specs/
 │   ├── security/        (SPEC-005, 006)
-│   ├── tournament/       (SPEC-001, 002, 003, 004)
-│   ├── organization/    (SPEC-007)
+│   ├── tournament/       (SPEC-001, 002, 003, 004, CU01-CU08)
+│   ├── organization/    (SPEC-007, CU10)
+│   ├── security/        (SPEC-005, 006, CU09)
 │   └── crud/           (SPEC-008, 009, 010, 011)
 └── usecases/           (CU-01 al CU-10)
+```
+
+### Migrations CRUD
+
+```yaml
+00000000000015: sports_crud.sql        - RLS for sports
+00000000000016: categories_crud.sql   - RLS for categories
+00000000000017: entries_crud.sql      - RLS for entries + entry_members
+00000000000018: community_feed.sql    - Feed RLS + auto-events
+```
+
+### Specs Convertidos de Use Cases
+
+```yaml
+CU01: Tournament Creation
+CU02: Registration
+CU03: Attendance
+CU04: Bracket Generation
+CU05: Score Entry
+CU06: ELO Calculation
+CU07: Bracket Advancement
+CU08: Tournament Closure
+CU09: Profile Management
+CU10: Activity Feed
 ```
 
 ---
 
 *Journal entry updated: 2026-03-31*
+
 
 
 
