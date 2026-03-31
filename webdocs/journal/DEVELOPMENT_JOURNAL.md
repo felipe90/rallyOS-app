@@ -277,15 +277,49 @@ supabase/migrations/
 
 ```bash
 # RLS habilitado
-SELECT relname, relrowsecurity FROM pg_class WHERE relname = 'persons';
-# Result: persons | t ✅
-
-# Policies creadas
-SELECT policyname, cmd FROM pg_policies WHERE tablename = 'persons';
 # Result: 4 rows ✅
 ```
 
 ---
 
-*Journal entry updated: 2026-03-30*
+## 2026-03-30/31 — MVP Specs Implementados
+
+### Specs Completados
+
+```yaml
+SPEC-001: Free Tournament Flow
+SPEC-002: Attendance/Check-In  
+SPEC-003: Bracket Generation
+SPEC-004: Match Score Entry
+SPEC-005: Person CRUD con RLS
+SPEC-006: Prevent Duplicate Registration
+SPEC-007: Club Management
+```
+
+### Migrations Creadas
+
+```yaml
+00000000000008: add_persons_rls.sql        - RLS policies for persons
+00000000000009: prevent_duplicate_registration.sql - Trigger anti-duplicate
+00000000000010: free_tournament_flow.sql   - fee_amount + auto-confirm
+00000000000011: attendance_checkin.sql     - checked_in_at + validation
+00000000000012: bracket_generation.sql    - generate_bracket() function
+00000000000013: match_score_entry.sql      - Docs (ya existía)
+00000000000014: club_management.sql         - clubs + club_members tables
+```
+
+### Features Implementadas
+
+```yaml
+Tournament: fee_amount, auto-confirm, status transitions
+Attendance: checked_in_at, attendance validation, bracket lock
+Bracket: generate_bracket() con seeding ELO, BYE handling
+Clubs: clubs CRUD, club_members, club_id en entries
+Security: RLS en persons, duplicate prevention
+```
+
+---
+
+*Journal entry updated: 2026-03-31*
+
 
