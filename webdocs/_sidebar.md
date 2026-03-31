@@ -23,4 +23,4 @@
   - [ADR-003: RLS SECURITY DEFINER](adr/003-rls-security)
 
 - **Journal**
-  - [Desarrollo](journal/README)
+  - [Desarrollo](journal/DEVELOPMENT_JOURNAL)

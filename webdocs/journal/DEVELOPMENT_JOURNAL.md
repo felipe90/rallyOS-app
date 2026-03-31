@@ -385,7 +385,69 @@ CU10: Activity Feed
 
 ---
 
+## 2026-03-31 — Testing & Verification
+
+### Test Results
+
+| Aspect | Status | Notes |
+|--------|--------|-------|
+| RLS Tables | ✅ 13/15 | athlete_stats y payments son N/A |
+| RLS Policies | ✅ 35 | Todas creadas |
+| Business Triggers | ✅ 9 | Triggers de negocio activos |
+| New Columns | ✅ 4 | fee_amount, checked_in_at, club_id, bracket_generated |
+| New Tables | ✅ 2 | clubs, club_members |
+| Specs | ✅ 21 | Todos creados |
+| Use Cases | ✅ 10 | Verbose completos |
+| Migrations | ✅ 18 | Todas aplicadas |
+
+### RLS Coverage
+
+| Table | SELECT | INSERT | UPDATE | DELETE |
+|-------|--------|--------|--------|--------|
+| sports | ✅ | ✅ | ✅ | ✅ |
+| tournaments | ✅ | ✅ | - | - |
+| categories | ✅ | ✅ | ✅ | ✅ |
+| persons | ✅ | ✅ | ✅ | ✅ |
+| tournament_entries | ✅ | ✅ | ✅ | ✅ |
+| entry_members | ✅ | ✅ | - | ✅ |
+| matches | ✅ | ✅ | ✅ | ✅ |
+| scores | ✅ | ✅ | ✅ | ✅ |
+| elo_history | ✅ | - | - | - |
+| community_feed | ✅ | ✅ | - | ✅ |
+| clubs | ✅ | ✅ | ✅ | ✅ |
+| club_members | ✅ | ✅ | - | ✅ |
+
+### Active Triggers
+
+```yaml
+trg_prevent_duplicate_registration    - entry_members
+trg_auto_confirm_free_entry          - tournament_entries
+trg_validate_attendance_change       - tournament_entries
+trg_validate_category_delete         - categories
+trg_feed_entry_registered          - tournament_entries
+trg_advance_bracket                 - matches
+trg_match_completion                - matches
+trg_matches_conflict_resolution     - matches
+trg_scores_conflict_resolution      - scores
+```
+
+### MVP Backend Status
+
+```yaml
+Security (RLS):     ✅ Completado
+Tournament Flow:     ✅ Completado
+Bracket System:     ✅ Completado
+ELO Calculation:    ✅ Completado
+Clubs:              ✅ Completado
+Community Feed:     ✅ Completado
+─────────────────────────────
+MVP Backend:        ✅ LISTO
+```
+
+---
+
 *Journal entry updated: 2026-03-31*
+
 
 
 
