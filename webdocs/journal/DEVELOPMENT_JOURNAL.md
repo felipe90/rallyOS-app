@@ -320,6 +320,47 @@ Security: RLS en persons, duplicate prevention
 
 ---
 
+## 2026-03-31 — CRUD Specs + Use Cases
+
+### CRUD Specs Creados
+
+```yaml
+SPEC-008: Sports CRUD con RLS
+SPEC-009: Categories CRUD con RLS
+SPEC-010: Tournament Entries CRUD
+SPEC-011: Community Feed
+```
+
+### Use Cases Verbose Creados
+
+```yaml
+CU-01: Organizador Crea Torneo
+CU-02: Jugador se Registra en Torneo
+CU-03: Organizador Confirma Asistencia (Check-In)
+CU-04: Organizador Genera Bracket
+CU-05: Árbitro Ingresa Scores
+CU-06: Sistema Calcula ELO Automáticamente
+CU-07: Ganador Avanza al Siguiente Partido
+CU-08: Organizador Cierra Torneo
+CU-09: Jugador Ve su Perfil y Estadísticas
+CU-10: Jugador Ve Feed de Actividad
+```
+
+### Estructura de Specs
+
+```
+openspec/changes/mvp-tournament-flow/
+├── specs/
+│   ├── security/        (SPEC-005, 006)
+│   ├── tournament/       (SPEC-001, 002, 003, 004)
+│   ├── organization/    (SPEC-007)
+│   └── crud/           (SPEC-008, 009, 010, 011)
+└── usecases/           (CU-01 al CU-10)
+```
+
+---
+
 *Journal entry updated: 2026-03-31*
+
 
 
