@@ -28,28 +28,31 @@ graph TD
         K[Referee starts Match] --> L[matches.status = 'READY']
         L --> M[matches.status = 'LIVE']
         M --> N[Scores updated]
-        N --> O{match ends?}
+        N --> N1{PIN Correct?}
+        N1 -->|Yes| O{match ends?}
+        N1 -->|No| N
         O -->|No| N
         O -->|Yes| P[matches.status = 'FINISHED']
     end
 
     subgraph ELO_Calculation
         P --> Q[Trigger: process_match_completion]
-        Q --> Q1[Determine winner]
-        Q1 --> Q2[Calculate ELO]
+        Q --> Q1[Query match_sets for winner]
+        Q1 --> Q2[Calculate ELO (Expected vs Actual)]
         Q2 --> Q3[elo_history INSERT]
         Q2 --> Q4[athlete_stats UPDATE]
     end
 
     subgraph Bracket_Advancement
         P --> R[Trigger: advance_bracket_winner]
-        R --> R1[Get winner from sets_json]
+        R --> R1[Get winner based on match_sets]
         R1 --> R2{next_match_id exists?}
-        R2 -->|Yes| R3[Place winner in next match]
+        R2 -->|Yes| R2a[Read winner_to_slot]
+        R2a --> R3[Place winner in specific Slot A or B]
         R2 -->|No| R4[Championship complete]
-        R3 --> R5{Both entries present?}
+        R3 --> R5{Both slots filled?}
         R5 -->|Yes| R6[status: SCHEDULED]
-        R5 -->|No| R7[Waiting for other semifinal]
+        R5 -->|No| R7[Waiting for opponent]
     end
 
     style ELO_Calculation fill:#e1f5fe
@@ -60,9 +63,14 @@ graph TD
 
 ```mermaid
 erDiagram
+    COUNTRIES ||--o{ PERSONS : "nationality"
+    COUNTRIES ||--o{ CLUBS : "location"
+    COUNTRIES ||--o{ TOURNAMENTS : "location"
+
     SPORTS ||--o{ ATHLETE_STATS : "has"
     SPORTS ||--o{ TOURNAMENTS : "defines"
     SPORTS ||--o{ ELO_HISTORY : "tracks"
+    SPORTS ||--o{ ACHIEVEMENTS : "can have"
     
     TOURNAMENTS ||--o{ CATEGORIES : "contains"
     TOURNAMENTS ||--o{ TOURNAMENT_STAFF : "has"
@@ -75,14 +83,20 @@ erDiagram
     PERSONS ||--o{ ENTRY_MEMBERS : "belongs to"
     PERSONS ||--o{ TOURNAMENT_STAFF : "works as"
     PERSONS ||--o{ PAYMENTS : "pays"
+    PERSONS ||--o{ PLAYER_ACHIEVEMENTS : "earns"
     
     ATHLETE_STATS }o--|| SPORTS : "for sport"
     
+    ACHIEVEMENTS ||--o{ PLAYER_ACHIEVEMENTS : "rewarded in"
+
     TOURNAMENT_ENTRIES ||--o{ ENTRY_MEMBERS : "composed of"
     TOURNAMENT_ENTRIES ||--o{ PAYMENTS : "has"
     
-    MATCHES ||--|| SCORES : "has one"
-    MATCHES ||--o{ MATCHES : "next_match_id"
+    MATCHES ||--|| SCORES : "has summary"
+    MATCHES ||--o{ MATCH_SETS : "tracked in"
+    MATCHES ||--o{ MATCHES : "advances via winner_to_slot"
+    
+    SCORES ||--o{ MATCH_SETS : "detailed by"
     
     ELO_HISTORY }o--|| PERSONS : "records for"
     ELO_HISTORY }o--|| MATCHES : "from match"
@@ -102,9 +116,9 @@ sequenceDiagram
     Client->>RLS: UPDATE matches SET status = 'FINISHED'
     RLS->>Trigger: Allow (staff role)
     
-    Trigger->>Trigger: Read sets_json from scores
+    Trigger->>Trigger: Query match_sets
     
-    Note over Trigger: Calculate winner<br/>from sets won
+    Note over Trigger: Determine winner by sets won
     
     Trigger->>elo_history: INSERT winner ELO
     Trigger->>athlete_stats: UPDATE winner stats
@@ -191,11 +205,12 @@ NEXT_MATCH_ID links:
 ## Key Triggers Reference
 
 ```yaml
-trg_matches_conflict_resolution:     matches,  BEFORE UPDATE, Time-tampering protection
-trg_scores_conflict_resolution:     scores,   BEFORE UPDATE, Time-tampering protection
-trg_match_completion:               matches,  AFTER UPDATE, ELO calculation
-trg_advance_bracket:               matches,  AFTER UPDATE, Winner advancement
-trg_tournament_created_assign_organizer: tournaments, AFTER INSERT, Auto-assign creator
+trg_update_athlete_rank:        athlete_stats, BEFORE UPDATE, Rank Up (Bronze-Diamond)
+trg_generate_match_pin:         matches, BEFORE INSERT, Identity security
+trg_match_completion:           matches, AFTER UPDATE, REAL ELO Logic
+trg_advance_bracket:            matches, AFTER UPDATE, Deterministic Advancement
+trg_tournament_created_assign_organizer: tournaments, AFTER INSERT, Creator auth
+trg_scores_conflict_resolution: scores, BEFORE UPDATE, Offline sync protection
 ```
 
 ## ELO Calculation Formula

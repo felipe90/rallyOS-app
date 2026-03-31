@@ -85,7 +85,7 @@ VALUES
 -- ────────────────────────────────────────
 
 -- Semifinal 1: Felipe Wolf (ELO 1200, Seed 1) vs Carlos Perez (ELO 980, Seed 4)
-INSERT INTO matches (id, category_id, entry_a_id, entry_b_id, referee_id, court_id, status, round_name, next_match_id)
+INSERT INTO matches (id, category_id, entry_a_id, entry_b_id, referee_id, court_id, status, round_name, next_match_id, winner_to_slot)
 VALUES
   ('00000000-0000-0000-0003-000000000001',
    '00000000-0000-0000-0000-000000000020',
@@ -95,10 +95,11 @@ VALUES
    'Mesa-1',
    'FINISHED',
    'Semifinal',
-   '00000000-0000-0000-0003-000000000003'); -- → points to Final
+   '00000000-0000-0000-0003-000000000003',
+   'A'); -- → points to Final (Slot A)
 
 -- Semifinal 2: Andres Rojas (ELO 1150, Seed 2) vs Miguel Torres (ELO 1080, Seed 3)
-INSERT INTO matches (id, category_id, entry_a_id, entry_b_id, referee_id, court_id, status, round_name, next_match_id)
+INSERT INTO matches (id, category_id, entry_a_id, entry_b_id, referee_id, court_id, status, round_name, next_match_id, winner_to_slot)
 VALUES
   ('00000000-0000-0000-0003-000000000002',
    '00000000-0000-0000-0000-000000000020',
@@ -108,7 +109,8 @@ VALUES
    'Mesa-2',
    'LIVE',
    'Semifinal',
-   '00000000-0000-0000-0003-000000000003'); -- → points to Final
+   '00000000-0000-0000-0003-000000000003',
+   'B'); -- → points to Final (Slot B)
 
 -- Final (placeholder — winner TBD)
 INSERT INTO matches (id, category_id, entry_a_id, entry_b_id, referee_id, court_id, status, round_name)
@@ -123,36 +125,32 @@ VALUES
    'Final');
 
 -- ────────────────────────────────────────
--- 8. SCORES (for the finished Semifinal 1 and the live Semifinal 2)
+-- 8. SCORES & SETS (Relational Data)
 -- ────────────────────────────────────────
 
--- Semifinal 1 result: Carlos Perez BEATS Felipe Wolf (ELO UPSET)
--- CP10 (ELO 980) beats FW (ELO 1200) → This is the UPSET!
-INSERT INTO scores (match_id, current_set, points_a, points_b, sets_json)
-VALUES
-  ('00000000-0000-0000-0003-000000000001',
-   5,   -- Match ended on set 5
-   8,   -- Felipe Wolf's last points
-   11,  -- Carlos Perez wins last set
-   '[
-     {"set": 1, "a": 11, "b": 8},
-     {"set": 2, "a": 7,  "b": 11},
-     {"set": 3, "a": 11, "b": 9},
-     {"set": 4, "a": 6,  "b": 11},
-     {"set": 5, "a": 8,  "b": 11}
-   ]'::jsonb);
+-- Semifinal 1 base score
+INSERT INTO scores (match_id, current_set, points_a, points_b)
+VALUES ('00000000-0000-0000-0003-000000000001', 5, 8, 11);
 
--- Semifinal 2 is LIVE: Andres vs Miguel, currently in Set 3
-INSERT INTO scores (match_id, current_set, points_a, points_b, sets_json)
+-- Semifinal 1 sets details (Carlos Perez wins 3-2)
+INSERT INTO match_sets (match_id, set_number, points_a, points_b, is_finished)
 VALUES
-  ('00000000-0000-0000-0003-000000000002',
-   3,
-   7,   -- Andres current points in Set 3
-   5,   -- Miguel current points in Set 3
-   '[
-     {"set": 1, "a": 11, "b": 8},
-     {"set": 2, "a": 9,  "b": 11}
-   ]'::jsonb);
+  ('00000000-0000-0000-0003-000000000001', 1, 11, 8,  TRUE),
+  ('00000000-0000-0000-0003-000000000001', 2, 7,  11, TRUE),
+  ('00000000-0000-0000-0003-000000000001', 3, 11, 9,  TRUE),
+  ('00000000-0000-0000-0003-000000000001', 4, 6,  11, TRUE),
+  ('00000000-0000-0000-0003-000000000001', 5, 8,  11, TRUE);
+
+-- Semifinal 2 base score
+INSERT INTO scores (match_id, current_set, points_a, points_b)
+VALUES ('00000000-0000-0000-0003-000000000002', 3, 7, 5);
+
+-- Semifinal 2 sets details (Live match)
+INSERT INTO match_sets (match_id, set_number, points_a, points_b, is_finished)
+VALUES
+  ('00000000-0000-0000-0003-000000000002', 1, 11, 8,  TRUE),
+  ('00000000-0000-0000-0003-000000000002', 2, 9,  11, TRUE),
+  ('00000000-0000-0000-0003-000000000002', 3, 7,  5,  FALSE);
 
 -- ────────────────────────────────────────
 -- 9. PAYMENT RECORDS

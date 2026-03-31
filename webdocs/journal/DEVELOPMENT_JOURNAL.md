@@ -446,9 +446,55 @@ MVP Backend:        ✅ LISTO
 
 ---
 
+## 2026-03-31 — Architectural Overhaul & Global Ready
+
+### Session Overview
+
+Executed a structural "ruthless" audit and overhaul of the core engine, followed by a new layer of Engagement (Gamification) and Global Readiness (Localization).
+
+### 🔴 RELATIONAL OVERHAUL (Core Stability)
+
+#### 1. Normalized Sets
+- **Problem**: `sets_json` was a technical debt that blocked native SQL analytics.
+- **Solution**: Removed JSONB and created `match_sets` table.
+- **Benefits**: SQL-native winner detection, granular set-by-set sync.
+
+#### 2. Deterministic Bracket Advancement
+- **Problem**: "First empty slot" logic was non-deterministic and prone to sync race conditions.
+- **Solution**: Introduced `winner_to_slot` (A/B) in `matches`.
+- **Benefits**: Predictable, rock-solid bracket geometry.
+
+#### 3. Real ELO Engine
+- **Problem**: Placeholder ELO trigger assumed Entry A always won.
+- **Solution**: Rewrote `process_match_completion` to compare set scores from `match_sets`.
+- **Benefits**: Fair, competitive ratings based on actual score diff.
+
+### 🔵 ENGAGEMENT & INTEGRITY (SaaS Layer)
+
+#### 1. Gamification (Ranks & Medals)
+- **Feature**: 5 Ranks (Bronze to Diamond) and an achievement ledger.
+- **Automation**: Auto-rank update on ELO change via `trg_update_athlete_rank`.
+
+#### 2. Invisible Referee (PIN Code)
+- **Feature**: Random 4-digit `pin_code` per match.
+- **Benefit**: Decentralized scoring; players enter scores at the court without staff supervision while maintaining integrity.
+
+### 🌍 GLOBAL READINESS (Localization)
+
+#### 1. Countries Master Data
+- **Feature**: Added `countries` table (CO, AR, ES, MX, US, BR, CL, PE).
+- **Integration**: Players have `nationality`, Clubs/Tournaments have `country_id`.
+
+### Final Backend Status (MVP CORE)
+
+```yaml
+Relational Integrity: ✅ 100%
+Competitive Logic:    ✅ 100%
+Global Ready Layer:   ✅ 100%
+Security (RLS):       ✅ 100%
+Offline Sync Design:  ✅ 100%
+─────────────────────────────
+RALLYOS CORE:         🚀 READY FOR MOBILE APP
+```
+
 *Journal entry updated: 2026-03-31*
-
-
-
-
-

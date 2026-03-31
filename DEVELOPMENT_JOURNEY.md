@@ -63,5 +63,48 @@ Defined the architectural design for community social events to foster retention
 ## Day 2 (Late): Context Future-Proofing (English Translation)
 Following the Spec-Driven Development philosophy and aiming for a future-proofed codebase, a decision was made to translate 100% of the architectural documentation, design specs, and SQL comments from Spanish to English. This ensures standard B2B/Enterprise practices and broader collaboration capabilities.
 
+## Day 3: Ruthless Architectural Overhaul (March 31, 2026)
+
+**Objective:** Fix critical logic flaws and data modeling "smells" identified during the architectural audit.
+
+### 1. The "Real" ELO Engine
+Discovered that the previous ELO implementation was a placeholder that always assumed Entry A won.
+*   **Applied Solution:** Rewrote the `process_match_completion` trigger to perform real set-by-set comparison. It now correctly identifies the winner and applies the standard ELO formula with dynamic K-Factors (32/24/16) based on player experience.
+
+### 2. Deterministic Bracket Advancement
+The "First Empty Slot" pattern was identified as a major risk for bracket integrity.
+*   **Applied Solution:** Introduced `winner_to_slot` (ENUM 'A', 'B') in the `matches` table. The `advance_bracket_winner` trigger now places winners in precisely defined slots, ensuring the bracket remains structurally sound even with manual overrides or sync delays.
+
+### 3. Data Normalization (Sets)
+The use of `JSONB` for match sets was flagged as "lazy modeling" that would hinder future performance and statistics.
+*   **Applied Solution:** Eliminated `scores.sets_json` and implemented a fully relational `match_sets` table. This provides SQL-native integrity and simplifies the synchronization of individual set results in an offline-first environment.
+
+### 4. Identity Consolidation
+Refined the relationship between `persons` (Athletes) and `auth.users` (Identity).
+*   **Applied Solution:** Enforced a 1:1 unique constraint on `persons.user_id` to prevent identity fragmentation. The system now treats `persons` as the master profile for all athletic context, whether linked to a registered account or existing as a "Shadow Profile".
+
+## Day 3 (Evening): Engagement & Integrity (Gamification & PIN Referee)
+
+**Objective:** Transform RallyOS from a management tool into a social SaaS with self-sustaining operational logic.
+
+### 1. Gamification & Ranks
+Implemented a progression system to drive player retention.
+*   **Applied Solution:** Defined 5 ELO-based ranks (Bronze to Diamond) and established a ledger for automated achievements. Created a trigger to auto-adjust ranks on every match completion, providing immediate feedback to the player.
+
+### 2. PIN-Based Self-Refereeing (The "Invisible Referee")
+Addressed the operational cost of tournaments by enabling players to report scores securely.
+*   **Applied Solution:** Implemented a `pin_code` system for matches. Each match now generates a unique 4-digit PIN. Players can only submit scores if they provide this PIN (ensuring physical presence), while tournament staff retain administrative bypass capabilities.
+
+### 3. Identity Integrity Baseline
+Set the stage for future anti-smurfing measures.
+*   **Applied Solution:** Documented the "Trusted Athlete" roadmap, prioritizing social validation and ELO anomaly detection for the next phase of development.
+
+### 4. Localization & Global Readiness
+Prepared the platform for international expansion.
+*   **Applied Solution:** Implemented the `countries` master table and linked all core entities (Players, Clubs, Tournaments) to their respective geographic regions. Seeded the database with 8 major markets (COL, ARG, MEX, ESP, etc.), enabling country-based filtering and public nationality flags.
+
 ---
-*Current state: Architecture phase fully documented in English and ready for implementation.*
+*Current state: Backend architecture is 100% "Global Ready" and operationally autonomous. Ready for App Implementation. (March 31, 2026)*
+
+
+
