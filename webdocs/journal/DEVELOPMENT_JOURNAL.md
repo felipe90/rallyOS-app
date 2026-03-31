@@ -235,4 +235,57 @@ webdocs/README.md:   Header con logo centrado
 
 ---
 
+## 2026-03-30 (Noche 2) — SPEC-005: Person RLS
+
+### Session Overview
+
+Implementamos RLS en la tabla `persons` siguiendo el workflow SDD.
+
+### Specs Creados
+
+```yaml
+openspec/changes/mvp-tournament-flow/
+├── proposal.md
+├── specs/
+│   ├── security/person-rls.md      (SPEC-005)
+│   ├── security/duplicate-registration.md  (SPEC-006)
+│   ├── tournament/free-flow.md    (SPEC-001)
+│   ├── tournament/attendance.md   (SPEC-002)
+│   ├── tournament/bracket-generation.md (SPEC-003)
+│   ├── tournament/match-scoring.md (SPEC-004)
+│   └── organization/club-management.md (SPEC-007)
+└── design.md
+```
+
+### Implementación SPEC-005
+
+| Policy | Command | Description |
+|--------|---------|-------------|
+| Persons are readable... | SELECT | Todos usuarios autenticados |
+| Users can create own... | INSERT | Propio user_id o NULL (guest) |
+| Users can update own... | UPDATE | Solo user_id propio |
+| Users can delete own... | DELETE | Solo user_id propio |
+
+### Files Created
+
+```
+supabase/migrations/
+└── 00000000000008_add_persons_rls.sql
+```
+
+### Verification
+
+```bash
+# RLS habilitado
+SELECT relname, relrowsecurity FROM pg_class WHERE relname = 'persons';
+# Result: persons | t ✅
+
+# Policies creadas
+SELECT policyname, cmd FROM pg_policies WHERE tablename = 'persons';
+# Result: 4 rows ✅
+```
+
+---
+
 *Journal entry updated: 2026-03-30*
+
