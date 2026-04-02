@@ -108,11 +108,8 @@ ON referee_assignments(match_id, is_confirmed);
 CREATE INDEX IF NOT EXISTS idx_referee_assignments_user 
 ON referee_assignments(user_id);
 
-CREATE INDEX IF NOT EXISTS idx_available_referees_match 
-ON available_referees(match_id);
-
-CREATE INDEX IF NOT EXISTS idx_available_referees_user 
-ON available_referees(user_id);
+-- Note: available_referees is a VIEW, no indexes can be created directly
+-- Query performance relies on underlying table indexes
 
 -- 5. ADD matches_refereed counter to athlete_stats (for round-robin balancing)
 ALTER TABLE athlete_stats 

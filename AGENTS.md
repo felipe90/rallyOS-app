@@ -12,6 +12,7 @@ This repository contains the source code for the RallyOS mobile application and 
 
 **Load the following skills from the knowledge base before major changes:**
 - UI/UX: `../rallyOS/.ai/skills/mobile-ui-agent/SKILL.md`
+- UX Strategy Expert: `../rallyOS/.ai/skills/ux-expert/SKILL.md`
 - Data/Sync: `../rallyOS/.ai/skills/offline-state-agent/SKILL.md`
 - Database/RLS: `../rallyOS/.ai/skills/supabase-db-agent/SKILL.md`
 
