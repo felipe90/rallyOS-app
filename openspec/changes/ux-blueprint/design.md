@@ -43,6 +43,10 @@ Priorizamos la accesibilidad con una barra inferior de navegación (Bottom Tab B
 - `[ELO History Chart]`: (CU-06, CU-09) Gráfico interactivo de evolución de rating.
 - `[Achievements/Badges]`: (CU-09) Visualización de logros obtenidos.
 
+### 6. **Desktop & Public Display (Expansion)**
+- `[Admin Desktop Dashboard]`: (PRO-01) Vista de alta densidad para gestión masiva.
+- `[TV Scoreboard Display]`: (DIS-01) Dashboard público con actualización por Realtime.
+
 ---
 
 ## Interaction Flows
@@ -53,9 +57,15 @@ Priorizamos la accesibilidad con una barra inferior de navegación (Bottom Tab B
 ### Flow B: **The Tournament Setup (Organizer)**
 `Organizer Dashboard` → `Creation Form` → `Attendance Management` → `Bracket Generation` → `Live Monitoring` → `Tournament Closure`.
 
+### Flow C: **The Desktop & Display Extension**
+`Admin Desktop Dash` → `Management Tab` → `Live TV Link` → `Public TV Mode`.
+
 ---
 
 ## Technical UX Standards
 - **Optimistic UI**: Todas las interacciones de score deben reflejarse localmente de inmediato (Zustand/TanStack).
+- **Realtime Sync**: La vista de TV (Display) usa **Supabase Realtime** para actualizaciones pasivas.
 - **Glassmorphism Overlay**: Los modales y paneles laterales usan desenfoque de fondo (`blur`).
 - **Tactile Transitions**: Uso de `React Native Reanimated` para transiciones suaves entre estados de torneo.
+- **Outdoor-First**: Tipografía de alto contraste y targets táctiles de gran formato (min 48dp).
+

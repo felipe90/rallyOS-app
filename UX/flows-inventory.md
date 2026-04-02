@@ -45,6 +45,20 @@ Este inventario documenta los 6 macro-flujos críticos de la aplicación, mapean
 
 ---
 
+## Macro-Flujo 3: **Desktop Expansion (Admin & Display)**
+
+### **Step 1: Admin Management** ([PRO-01](flows-desktop/admin-desktop-layout.md))
+- **Screen**: `Admin Multi-Tournament Dashboard`.
+- **Primary Action**: Gestión masiva de inscripciones / Brackets.
+- **Components**: `DataGridAdmin`, `BulkActionToolbar`, `QuickFilterSidebar`.
+
+### **Step 2: Public Scoreboard** ([DIS-01](flows-desktop/tv-public-scoreboard.md))
+- **Screen**: `Live Display Mode`.
+- **Primary Action**: Visualización pasiva en Smart TV.
+- **Components**: `LiveScoreGrid`, `CourtIndicator`, `RealtimeScoreTicker`.
+
+---
+
 ## Atomic Components Registry (Top-Down)
 
 | Component | Vibe Pattern | Role |
