@@ -15,18 +15,43 @@
 -- - bracket_slots: Individual positions in the bracket
 
 -- ============================================
--- ENUMS
+-- ENUMS (Idempotent - check if exists first)
 -- ============================================
 
-CREATE TYPE group_status AS ENUM ('PENDING', 'IN_PROGRESS', 'COMPLETED');
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'group_status') THEN
+        CREATE TYPE group_status AS ENUM ('PENDING', 'IN_PROGRESS', 'COMPLETED');
+    END IF;
+END $$;
 
-CREATE TYPE member_status AS ENUM ('ACTIVE', 'WALKED_OVER', 'DISQUALIFIED');
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'member_status') THEN
+        CREATE TYPE member_status AS ENUM ('ACTIVE', 'WALKED_OVER', 'DISQUALIFIED');
+    END IF;
+END $$;
 
-CREATE TYPE bracket_status AS ENUM ('PENDING', 'IN_PROGRESS', 'COMPLETED');
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'bracket_status') THEN
+        CREATE TYPE bracket_status AS ENUM ('PENDING', 'IN_PROGRESS', 'COMPLETED');
+    END IF;
+END $$;
 
-CREATE TYPE match_phase AS ENUM ('ROUND_ROBIN', 'KNOCKOUT', 'BRONZE', 'FINAL');
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'match_phase') THEN
+        CREATE TYPE match_phase AS ENUM ('ROUND_ROBIN', 'KNOCKOUT', 'BRONZE', 'FINAL');
+    END IF;
+END $$;
 
-CREATE TYPE assignment_type AS ENUM ('AUTOMATIC', 'MANUAL', 'LOSER_ASSIGNED');
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'assignment_type') THEN
+        CREATE TYPE assignment_type AS ENUM ('AUTOMATIC', 'MANUAL', 'LOSER_ASSIGNED');
+    END IF;
+END $$;
 
 -- ============================================
 -- TABLE: round_robin_groups
@@ -138,19 +163,23 @@ CREATE INDEX IF NOT EXISTS idx_matches_next ON matches(next_match_id) WHERE next
 ALTER TABLE referee_assignments ADD COLUMN IF NOT EXISTS assignment_type assignment_type DEFAULT 'MANUAL';
 
 -- ============================================
--- ADD TO tournament_status ENUM (if not exists)
--- Note: This is a PostgreSQL limitation - enum modifications require TYPE UPDATE
--- For now, we'll use application-level validation
--- The existing tournament_status enum: DRAFT, REGISTRATION, CHECK_IN, LIVE, COMPLETED
--- We need to add: PRE_TOURNAMENT, SUSPENDED, CANCELLED
+-- UPDATE tournament_status ENUM
+-- Add new values if they don't exist (existing: DRAFT, REGISTRATION, CHECK_IN, LIVE, COMPLETED)
+-- New values: PRE_TOURNAMENT, SUSPENDED, CANCELLED
 
 DO $$
 BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'tournament_status') THEN
-        CREATE TYPE tournament_status AS ENUM ('DRAFT', 'REGISTRATION', 'PRE_TOURNAMENT', 'CHECK_IN', 'LIVE', 'SUSPENDED', 'COMPLETED', 'CANCELLED');
-    ELSE
-        -- Check if PRE_TOURNAMENT exists, if not we need to handle it differently
-        -- For now, let's assume it's already there from previous migrations
+    -- PRE_TOURNAMENT
+    IF NOT EXISTS (SELECT 1 FROM pg_enum WHERE enumlabel = 'PRE_TOURNAMENT') THEN
+        ALTER TYPE tournament_status ADD VALUE IF NOT EXISTS 'PRE_TOURNAMENT';
+    END IF;
+    -- SUSPENDED
+    IF NOT EXISTS (SELECT 1 FROM pg_enum WHERE enumlabel = 'SUSPENDED') THEN
+        ALTER TYPE tournament_status ADD VALUE IF NOT EXISTS 'SUSPENDED';
+    END IF;
+    -- CANCELLED
+    IF NOT EXISTS (SELECT 1 FROM pg_enum WHERE enumlabel = 'CANCELLED') THEN
+        ALTER TYPE tournament_status ADD VALUE IF NOT EXISTS 'CANCELLED';
     END IF;
 END $$;
 

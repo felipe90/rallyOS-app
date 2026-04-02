@@ -405,89 +405,15 @@ BEFORE UPDATE ON knockout_brackets
 FOR EACH ROW EXECUTE FUNCTION fn_update_updated_at();
 
 -- ============================================
--- TRIGGER 8: Validate Score Rules (Sport-Agnostic)
+-- NOTE: Score validation trigger already exists in migration 32
+-- as trg_validate_score() which calls validate_score()
+-- DO NOT redefine it here to avoid conflicts
 -- ============================================
--- Reads validation rules from sports.scoring_config JSONB
--- NOT hardcoded to Table Tennis
-
-CREATE OR REPLACE FUNCTION fn_validate_score_rules()
-RETURNS TRIGGER AS $$
-DECLARE
-    v_sport_id UUID;
-    v_scoring_config JSONB;
-    v_points_to_win INTEGER;
-    v_win_by_2 BOOLEAN;
-    v_deuce_at INTEGER;
-BEGIN
-    -- Get sport scoring config from match
-    SELECT 
-        t.sport_id
-    INTO v_sport_id
-    FROM matches m
-    JOIN categories c ON m.category_id = c.id
-    JOIN tournaments t ON c.tournament_id = t.id
-    WHERE m.id = NEW.match_id;
-    
-    -- Get scoring config from sports table
-    SELECT scoring_config INTO v_scoring_config
-    FROM sports
-    WHERE id = v_sport_id;
-    
-    -- Extract validation values from config (sport-specific)
-    v_points_to_win := COALESCE(
-        (v_scoring_config->>'points_per_set')::INTEGER,
-        11
-    );
-    v_win_by_2 := COALESCE(
-        (v_scoring_config->>'win_by_2')::BOOLEAN,
-        TRUE
-    );
-    v_deuce_at := COALESCE(
-        (v_scoring_config->>'deuce_at')::INTEGER,
-        10
-    );
-    
-    -- Allow 0-0 as initial state
-    IF NEW.points_a = 0 AND NEW.points_b = 0 THEN
-        RETURN NEW;
-    END IF;
-    
-    -- Generic validation rules (read from config):
-    -- 1. Points must be non-negative
-    IF NEW.points_a < 0 OR NEW.points_b < 0 THEN
-        RAISE EXCEPTION 'Points cannot be negative';
-    END IF;
-    
-    -- 2. If both < deuce_at + 1, one must be ahead by 1
-    IF NEW.points_a < v_deuce_at + 1 AND NEW.points_b < v_deuce_at + 1 THEN
-        IF ABS(NEW.points_a - NEW.points_b) != 1 THEN
-            RAISE EXCEPTION 'Before deuce (%), difference must be 1 point', v_deuce_at;
-        END IF;
-    END IF;
-    
-    -- 3. If one reaches v_points_to_win, must win by 2 (if win_by_2 is true)
-    IF (NEW.points_a >= v_points_to_win OR NEW.points_b >= v_points_to_win) THEN
-        IF v_win_by_2 THEN
-            IF ABS(NEW.points_a - NEW.points_b) < 2 THEN
-                RAISE EXCEPTION 'Must win by % points', v_points_to_win - (v_points_to_win - 2);
-            END IF;
-        END IF;
-    END IF;
-    
-    -- 4. Extended deuce: if both >= deuce_at, continue until diff = 2
-    IF NEW.points_a >= v_deuce_at AND NEW.points_b >= v_deuce_at THEN
-        IF ABS(NEW.points_a - NEW.points_b) != 2 THEN
-            RAISE EXCEPTION 'In deuce (%), must win by 2 points', v_deuce_at;
-        END IF;
-    END IF;
-    
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
--- Remove old TT-specific trigger if exists, create generic one
-DROP TRIGGER IF EXISTS trg_validate_score_tt_rules ON scores;
-DROP TRIGGER IF EXISTS trg_validate_score ON scores;
-CREATE TRIGGER trg_validate_score
-BEFORE INSERT OR UPDATE ON scores
-FOR EACH ROW EXECUTE FUNCTION fn_validate_score_rules();
+-- 
+-- The validate_score() function in migration 32 already handles:
+-- - Sport-agnostic scoring validation via sports.scoring_config
+-- - Golden point, win-by-2, tiebreak detection
+-- - All sport-specific rules from the config
+-- 
+-- If you need to modify score validation, update migration 32's
+-- validate_score() function, not here.
