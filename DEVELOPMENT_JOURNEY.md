@@ -55,6 +55,32 @@ specs/domain/
 └── spec-dom-04-tournament-format-config.md  # NUEVA: Config completa
 ```
 
+### Bugs Fixed (Sport-Agnostic Audit)
+
+| Problema | Corrección |
+|----------|------------|
+| `max_members := 5` hardcoded | Leer de `scoring_config->tournament_format->group_size->max` |
+| Trigger intra-group no verificaba `referee_mode` | Ahora verifica antes de aplicar regla |
+| `loser_referees_winner` no se verificaba | Trigger lee de config |
+| Nombre `trg_validate_score_tt_rules` | Renombrado a `fn_validate_score_rules` |
+| Mensaje "Table Tennis" en trigger | Mensaje genérico |
+
+### Implementation Pattern
+
+```
+sports.scoring_config (fuente de verdad)
+         │
+         ▼
+triggers leen configuración
+         │
+         ▼
+Aplican reglas condicionalmente
+    │
+    ├── referee_mode = 'INTRA_GROUP' → validar mismo grupo
+    ├── loser_referees_winner = true → trackear perdedor
+    └── group_size.max = 5 → validar límite
+```
+
 ### Lessons Learned
 
 > **Pilar fundamental de RallyOS**: "Sport-Agnostic by Design"

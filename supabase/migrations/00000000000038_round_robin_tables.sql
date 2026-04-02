@@ -1,8 +1,15 @@
 -- Migration: 00000000000038_round_robin_tables.sql
--- Round Robin Groups and Knockout Brackets Schema
+-- Round Robin Groups and Knockout Brackets Schema (SPORT-AGNOSTIC)
 -- 
+-- IMPORTANT: All tournament format rules are configured per-sport in
+-- sports.scoring_config->tournament_format:
+--   - group_size.min/max (default: 3-5)
+--   - referee_mode (INTRA_GROUP, EXTERNAL, NONE, etc.)
+--   - loser_referees_winner (true/false)
+--   - advancement_count, has_third_place, etc.
+--
 -- Entities:
--- - round_robin_groups: Groups of 3-5 players playing round-robin
+-- - round_robin_groups: Groups playing round-robin (size configurable per sport)
 -- - group_members: Membership linking players to groups
 -- - knockout_brackets: Brackets generated post-groups
 -- - bracket_slots: Individual positions in the bracket

@@ -47,10 +47,12 @@ created_at:           timestamptz
 }
 ```
 
-**Configuración Sport-Agnostic:**
+**⚠️ SPORT-AGNOSTIC: Todos los triggers leen de esta configuración**
 - `structure`: KNOCKOUT_ONLY | ROUND_ROBIN_ONLY | ROUND_ROBIN_THEN_KNOCKOUT | SWISS_THEN_KNOCKOUT | AMERICANO | MEXICAN | LEAGUE | CUSTOM
 - `referee_mode`: NONE | EXTERNAL | INTRA_GROUP | ROTATING | SELF | ORGANIZER
-- `loser_referees_winner`: true = el perdedor arbitra al ganador (TT), false = no aplica
+- `loser_referees_winner`: true = el perdedor arbitra al ganador, false = no aplica
+- `group_size.min/max`: Límites de jugadores por grupo
+- Los triggers NO tienen valores hardcodeados - todo viene de esta config
 
 ### TOURNAMENTS
 ```yaml

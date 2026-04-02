@@ -1,24 +1,40 @@
 -- Migration: 00000000000039_rr_triggers.sql
--- Triggers for Round Robin integrity validation
+-- Triggers for Round Robin integrity validation (SPORT-AGNOSTIC)
 -- 
--- Triggers:
--- 1. trg_validate_group_member_count - Max 5 members per group
--- 2. trg_unique_person_per_tournament - One group per person per tournament
--- 3. trg_unique_seed_per_group - Unique seeds within group
--- 4. trg_update_group_status - Auto-update group status on match completion
--- 5. trg_validate_intra_group_referee - Referee must be from same group in RR
--- 6. trg_track_loser_for_referee - Store loser for next match assignment
+-- IMPORTANT: All rules are read from sports.scoring_config JSONB
+-- Configuration path: scoring_config->'tournament_format'
+-- 
+-- This ensures RallyOS is sport-agnostic - rules come from sport config
+-- not hardcoded assumptions.
 
 -- ============================================
--- TRIGGER 1: Validate Group Member Count
+-- TRIGGER 1: Validate Group Member Count (Configurable)
 -- ============================================
+-- Reads max members from sports.scoring_config->tournament_format->group_size->max
+-- Default: 5 if not configured
 
 CREATE OR REPLACE FUNCTION fn_validate_group_member_count()
 RETURNS TRIGGER AS $$
 DECLARE
     current_count INTEGER;
-    max_members INTEGER := 5;
+    max_members INTEGER;
+    v_sport_id UUID;
+    v_scoring_config JSONB;
 BEGIN
+    -- Get sport config for this tournament
+    SELECT t.sport_id, s.scoring_config
+    INTO v_sport_id, v_scoring_config
+    FROM round_robin_groups rrg
+    JOIN tournaments t ON rrg.tournament_id = t.id
+    JOIN sports s ON t.sport_id = s.id
+    WHERE rrg.id = NEW.group_id;
+    
+    -- Read max from config, default to 5 if not set
+    max_members := COALESCE(
+        (v_scoring_config->'tournament_format'->'group_size'->>'max')::INTEGER,
+        5
+    );
+    
     -- Get current member count (excluding the one being updated/deleted)
     IF TG_OP = 'DELETE' THEN
         SELECT COUNT(*) INTO current_count
@@ -32,7 +48,7 @@ BEGIN
     END IF;
     
     IF current_count >= max_members AND TG_OP = 'INSERT' THEN
-        RAISE EXCEPTION 'Group cannot have more than % members', max_members;
+        RAISE EXCEPTION 'Group cannot have more than % members (configured in sport)', max_members;
     END IF;
     
     RETURN NEW;
@@ -47,6 +63,7 @@ FOR EACH ROW EXECUTE FUNCTION fn_validate_group_member_count();
 -- ============================================
 -- TRIGGER 2: Unique Person Per Tournament
 -- ============================================
+-- Sport-agnostic: applies to all sports with groups
 
 CREATE OR REPLACE FUNCTION fn_unique_person_per_tournament()
 RETURNS TRIGGER AS $$
@@ -83,6 +100,7 @@ FOR EACH ROW EXECUTE FUNCTION fn_unique_person_per_tournament();
 -- ============================================
 -- TRIGGER 3: Unique Seed Per Group
 -- ============================================
+-- Sport-agnostic: applies to all sports with groups
 
 CREATE OR REPLACE FUNCTION fn_unique_seed_per_group()
 RETURNS TRIGGER AS $$
@@ -111,6 +129,7 @@ FOR EACH ROW EXECUTE FUNCTION fn_unique_seed_per_group();
 -- ============================================
 -- TRIGGER 4: Update Group Status on Match Complete
 -- ============================================
+-- Sport-agnostic: applies to all sports with groups
 
 CREATE OR REPLACE FUNCTION fn_update_group_status_on_match_complete()
 RETURNS TRIGGER AS $$
@@ -166,10 +185,12 @@ AFTER UPDATE ON matches
 FOR EACH ROW EXECUTE FUNCTION fn_update_group_status_on_match_complete();
 
 -- ============================================
--- TRIGGER 5: Validate Intra-Group Referee
+-- TRIGGER 5: Validate Referee Based on referee_mode
 -- ============================================
+-- Sport-agnostic: Only enforces intra-group rule if referee_mode = 'INTRA_GROUP'
+-- Otherwise skips validation (allows external refs, rotating refs, etc.)
 
-CREATE OR REPLACE FUNCTION fn_validate_intra_group_referee()
+CREATE OR REPLACE FUNCTION fn_validate_referee_assignment()
 RETURNS TRIGGER AS $$
 DECLARE
     v_match_group_id UUID;
@@ -177,25 +198,46 @@ DECLARE
     v_match_entry_b UUID;
     v_referee_person_id UUID;
     v_match_phase match_phase;
+    v_referee_mode TEXT;
+    v_sport_id UUID;
+    v_scoring_config JSONB;
 BEGIN
     -- Get match info
     SELECT 
         m.group_id,
         m.entry_a_id,
         m.entry_b_id,
-        m.phase
-    INTO v_match_group_id, v_match_entry_a, v_match_entry_b, v_match_phase
+        m.phase,
+        t.sport_id
+    INTO v_match_group_id, v_match_entry_a, v_match_entry_b, v_match_phase, v_sport_id
     FROM matches m
+    JOIN categories c ON m.category_id = c.id
+    JOIN tournaments t ON c.tournament_id = t.id
     WHERE m.id = NEW.match_id;
+    
+    -- Get referee_mode from sport config
+    SELECT scoring_config->'tournament_format'->>'referee_mode'
+    INTO v_referee_mode
+    FROM sports
+    WHERE id = v_sport_id;
+    
+    -- Get scoring config for loser_referees_winner check
+    SELECT scoring_config INTO v_scoring_config FROM sports WHERE id = v_sport_id;
     
     -- If no group (bracket match), skip validation
     IF v_match_group_id IS NULL THEN
         RETURN NEW;
     END IF;
     
-    -- If not ROUND_ROBIN phase, skip (KO allows any referee)
+    -- If not ROUND_ROBIN phase, skip (KO allows different referee rules)
     IF v_match_phase != 'ROUND_ROBIN' THEN
         RETURN NEW;
+    END IF;
+    
+    -- IMPORTANT: Only enforce intra-group rule if referee_mode = 'INTRA_GROUP'
+    -- For other modes (NONE, EXTERNAL, ROTATING), skip this validation
+    IF v_referee_mode != 'INTRA_GROUP' THEN
+        RETURN NEW;  -- Skip validation for non-intra-group modes
     END IF;
     
     -- Get referee's person_id from user_id
@@ -204,13 +246,17 @@ BEGIN
     JOIN persons p ON au.id = p.user_id
     WHERE au.id = NEW.user_id;
     
+    IF v_referee_person_id IS NULL THEN
+        RAISE EXCEPTION 'Referee must have a user account';
+    END IF;
+    
     -- Validate referee is in same group
     IF NOT EXISTS (
         SELECT 1 FROM group_members gm
         WHERE gm.group_id = v_match_group_id
         AND gm.person_id = v_referee_person_id
     ) THEN
-        RAISE EXCEPTION 'Referee must be from the same Round Robin group';
+        RAISE EXCEPTION 'Referee must be from the same group (referee_mode=INTRA_GROUP)';
     END IF;
     
     -- Validate referee is not playing (entry not in match)
@@ -228,14 +274,16 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-DROP TRIGGER IF EXISTS trg_validate_intra_group_referee ON referee_assignments;
-CREATE TRIGGER trg_validate_intra_group_referee
+DROP TRIGGER IF EXISTS trg_validate_referee_assignment ON referee_assignments;
+CREATE TRIGGER trg_validate_referee_assignment
 BEFORE INSERT OR UPDATE ON referee_assignments
-FOR EACH ROW EXECUTE FUNCTION fn_validate_intra_group_referee();
+FOR EACH ROW EXECUTE FUNCTION fn_validate_referee_assignment();
 
 -- ============================================
 -- TRIGGER 6: Track Loser for Referee Assignment
 -- ============================================
+-- Sport-agnostic: Only tracks if loser_referees_winner = true in config
+-- Only applies when referee_mode = 'INTRA_GROUP'
 
 CREATE OR REPLACE FUNCTION fn_track_loser_for_referee()
 RETURNS TRIGGER AS $$
@@ -247,6 +295,9 @@ DECLARE
     v_next_match_id UUID;
     v_next_group_id UUID;
     v_current_group_id UUID;
+    v_loser_referees_winner BOOLEAN;
+    v_referee_mode TEXT;
+    v_sport_id UUID;
 BEGIN
     -- Only trigger when status changes to FINISHED
     IF OLD.status = 'FINISHED' THEN
@@ -257,17 +308,36 @@ BEGIN
         RETURN NEW;
     END IF;
     
-    -- Get match info
+    -- Get sport config to check loser_referees_winner and referee_mode
     SELECT 
-        entry_a_id,
-        entry_b_id,
-        next_match_id,
-        group_id
-    INTO v_winner_entry_id, v_loser_entry_id, v_next_match_id, v_current_group_id
-    FROM matches
-    WHERE id = NEW.id;
+        t.sport_id,
+        m.group_id,
+        m.entry_a_id,
+        m.entry_b_id,
+        m.next_match_id
+    INTO v_sport_id, v_current_group_id, v_winner_entry_id, v_loser_entry_id, v_next_match_id
+    FROM matches m
+    JOIN categories c ON m.category_id = c.id
+    JOIN tournaments t ON c.tournament_id = t.id
+    WHERE m.id = NEW.id;
     
-    -- Determine winner and loser from score
+    -- Check if loser_referees_winner is enabled for this sport
+    SELECT 
+        (scoring_config->'tournament_format'->>'loser_referees_winner')::BOOLEAN,
+        scoring_config->'tournament_format'->>'referee_mode'
+    INTO v_loser_referees_winner, v_referee_mode
+    FROM sports
+    WHERE id = v_sport_id;
+    
+    -- IMPORTANT: Only track if loser_referees_winner = true AND referee_mode = 'INTRA_GROUP'
+    IF v_loser_referees_winner != TRUE OR v_referee_mode != 'INTRA_GROUP' THEN
+        RETURN NEW;  -- Skip for sports that don't use this rule
+    END IF;
+    
+    -- Get next match's group
+    SELECT group_id INTO v_next_group_id FROM matches WHERE id = v_next_match_id;
+    
+    -- Determine winner/loser from score
     IF EXISTS (SELECT 1 FROM scores WHERE match_id = NEW.id) THEN
         SELECT 
             CASE 
@@ -281,30 +351,25 @@ BEGIN
         INTO v_winner_entry_id, v_loser_entry_id
         FROM matches
         WHERE id = NEW.id;
-        
-        -- Get loser person_id
-        SELECT person_id INTO v_loser_person_id
-        FROM tournament_entries
-        WHERE id = v_loser_entry_id;
-        
-        -- Get loser user_id
-        SELECT user_id INTO v_loser_user_id
-        FROM persons
-        WHERE id = v_loser_person_id;
-        
-        -- Store loser for next match if there's a next match
-        IF v_loser_user_id IS NOT NULL AND v_next_match_id IS NOT NULL THEN
-            -- Check if loser is in same group as next match
-            SELECT group_id INTO v_next_group_id
-            FROM matches
+    END IF;
+    
+    -- Get loser user_id
+    SELECT p.user_id INTO v_loser_user_id
+    FROM tournament_entries te
+    JOIN persons p ON te.person_id = p.id
+    WHERE te.id = v_loser_entry_id;
+    
+    IF v_loser_user_id IS NULL THEN
+        RETURN NEW;  -- Shadow profile, cannot be referee
+    END IF;
+    
+    -- Store loser for next match if there's a next match
+    -- Only if same group (cross-group can't referee in INTRA_GROUP mode)
+    IF v_loser_user_id IS NOT NULL AND v_next_match_id IS NOT NULL THEN
+        IF v_next_group_id = v_current_group_id THEN
+            UPDATE matches
+            SET loser_assigned_referee = v_loser_user_id
             WHERE id = v_next_match_id;
-            
-            -- Only store if same group (cross-group can't referee)
-            IF v_next_group_id = v_current_group_id THEN
-                UPDATE matches
-                SET loser_assigned_referee = v_loser_user_id
-                WHERE id = v_next_match_id;
-            END IF;
         END IF;
     END IF;
     
@@ -340,10 +405,12 @@ BEFORE UPDATE ON knockout_brackets
 FOR EACH ROW EXECUTE FUNCTION fn_update_updated_at();
 
 -- ============================================
--- TRIGGER 8: Validate TT Score Rules
+-- TRIGGER 8: Validate Score Rules (Sport-Agnostic)
 -- ============================================
+-- Reads validation rules from sports.scoring_config JSONB
+-- NOT hardcoded to Table Tennis
 
-CREATE OR REPLACE FUNCTION fn_validate_score_tt_rules()
+CREATE OR REPLACE FUNCTION fn_validate_score_rules()
 RETURNS TRIGGER AS $$
 DECLARE
     v_sport_id UUID;
@@ -366,7 +433,7 @@ BEGIN
     FROM sports
     WHERE id = v_sport_id;
     
-    -- Extract TT-specific values
+    -- Extract validation values from config (sport-specific)
     v_points_to_win := COALESCE(
         (v_scoring_config->>'points_per_set')::INTEGER,
         11
@@ -385,7 +452,7 @@ BEGIN
         RETURN NEW;
     END IF;
     
-    -- TT Validation Rules:
+    -- Generic validation rules (read from config):
     -- 1. Points must be non-negative
     IF NEW.points_a < 0 OR NEW.points_b < 0 THEN
         RAISE EXCEPTION 'Points cannot be negative';
@@ -394,15 +461,15 @@ BEGIN
     -- 2. If both < deuce_at + 1, one must be ahead by 1
     IF NEW.points_a < v_deuce_at + 1 AND NEW.points_b < v_deuce_at + 1 THEN
         IF ABS(NEW.points_a - NEW.points_b) != 1 THEN
-            RAISE EXCEPTION 'Before deuce (before %), difference must be 1 point', v_deuce_at;
+            RAISE EXCEPTION 'Before deuce (%), difference must be 1 point', v_deuce_at;
         END IF;
     END IF;
     
-    -- 3. If one reaches v_points_to_win (11), must win by 2
+    -- 3. If one reaches v_points_to_win, must win by 2 (if win_by_2 is true)
     IF (NEW.points_a >= v_points_to_win OR NEW.points_b >= v_points_to_win) THEN
         IF v_win_by_2 THEN
             IF ABS(NEW.points_a - NEW.points_b) < 2 THEN
-                RAISE EXCEPTION 'Must win by 2 points in Table Tennis';
+                RAISE EXCEPTION 'Must win by % points', v_points_to_win - (v_points_to_win - 2);
             END IF;
         END IF;
     END IF;
@@ -410,7 +477,7 @@ BEGIN
     -- 4. Extended deuce: if both >= deuce_at, continue until diff = 2
     IF NEW.points_a >= v_deuce_at AND NEW.points_b >= v_deuce_at THEN
         IF ABS(NEW.points_a - NEW.points_b) != 2 THEN
-            RAISE EXCEPTION 'In deuce (10-10+), must win by 2 points';
+            RAISE EXCEPTION 'In deuce (%), must win by 2 points', v_deuce_at;
         END IF;
     END IF;
     
@@ -418,9 +485,9 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Note: This trigger might already exist from previous migration
--- Let's check and create only if not exists
+-- Remove old TT-specific trigger if exists, create generic one
 DROP TRIGGER IF EXISTS trg_validate_score_tt_rules ON scores;
-CREATE TRIGGER trg_validate_score_tt_rules
+DROP TRIGGER IF EXISTS trg_validate_score ON scores;
+CREATE TRIGGER trg_validate_score
 BEFORE INSERT OR UPDATE ON scores
-FOR EACH ROW EXECUTE FUNCTION fn_validate_score_tt_rules();
+FOR EACH ROW EXECUTE FUNCTION fn_validate_score_rules();
