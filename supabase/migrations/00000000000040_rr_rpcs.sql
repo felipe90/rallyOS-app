@@ -68,10 +68,11 @@ BEGIN
     -- Add members with seeding
     FOREACH v_entry_id IN ARRAY p_member_entry_ids
     LOOP
-        INSERT INTO group_members (group_id, entry_id, seed)
+        INSERT INTO group_members (group_id, entry_id, person_id, seed)
         SELECT 
             v_group_id,
             v_entry_id,
+            (SELECT person_id FROM entry_members WHERE entry_id = v_entry_id LIMIT 1),
             v_seed;
         
         v_seed := v_seed + 1;
