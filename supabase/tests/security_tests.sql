@@ -138,8 +138,7 @@ SELECT
     ELSE '❌ FAIL: Trigger not attached to matches — players can submit backdated results'
   END AS result
 FROM pg_trigger
-WHERE tgname LIKE '%offline_sync%'
-   OR tgname LIKE '%sync_conflict%';
+WHERE tgname LIKE '%conflict_resolution%';
 
 
 -- ────────────────────────────────────────

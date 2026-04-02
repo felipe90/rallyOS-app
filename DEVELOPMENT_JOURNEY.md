@@ -1,110 +1,101 @@
-# DEVELOPMENT JOURNEY: rallyOS
+# Development Journey - RallyOS
 
-This document serves as the development log for the **rallyOS** project, a sports tournament management platform with an Offline-First approach.
+*Last updated: April 2, 2026*
 
-## 📌 Philosophy: Spec-Driven Development (SDD)
-This development is primarily driven by **Spec-Driven Development**. For this reason, the entire initial stage is 100% dedicated to refining the domain model, analyzing constraints, orchestrating database security, and devising the technical business logic exhaustively, mitigating architectural risks theoretically *before* typing a single line of GUI code.
+## Day 5: Sport-Specific Scoring Rules Engine (April 2, 2026)
 
-## Day 1: Architectural Definition and Modeling (March 26, 2026)
+### Problem Identified
 
-**Objective:** Establish the architectural foundations and robust database schemas before implementing UI or Backend.
+RallyOS声称是sport-agnostic (deporte agnóstico), pero la tabla `sports` solo tenía:
+- `scoring_system` (POINTS/GAMES)
+- `default_points_per_set`
+- `default_best_of_sets`
 
-### Core Architectural Decisions
-1. **"Frontend-Hero" Tech Stack**:
-   *   React Native (Expo) for hybrid mobile development.
-   *   Supabase (PostgreSQL, Auth, Realtime) as Backend-as-a-Service, delegating access and authentication logic.
-   *   TanStack Query v5 + SQLite/AsyncStorage to guarantee local availability without internet.
+**Gap crítico**: No había forma de:
+1. Validar si un score es válido para el deporte
+2. Aplicar tie-breaks específicos
+3. Manejar golden point (Padel) o deuce (TT)
 
-2. **Offline-First Model & Optimistic UI**:
-   *   The calculation of **ELO** and business logic (Handicap, Bracket advancement) will operate temporarily on the client to provide instantaneous *Optimistic UI* to the user, without loading spinners.
+### Solution Designed
 
-### Physical Database Design and Mitigations
-The relational schema (`DATABASE_DESIGN_V2.md` / `DOMAIN_MODEL_V2.md`) was debugged, reaching the Third Normal Form (3NF) and Domain-Driven Design:
-*   **Match/Score Isolation:** Strict 1:1 relationship managed via an `UNIQUE` constraint on the scores table to prevent circular locks in the DB.
-*   **Bracket Logic (Linked List):** Each `match` points to its `next_match_id` to build visual brackets (Tournaments) with a single SQL query.
-*   **Immutable Ledger:** `elo_history` was defined as the untouchable (Append-Only) record to generate calculations and auditable graphs.
-*   **Tournament Entries (Ephemeral):** The rigid concept of "Team" was eliminated, using temporary entries tied to the Tournament, improving the software's pragmatism compared to sports reality.
+Extender `sports` con JSONB `scoring_config` + funciones de validación:
 
-### Security and Consistency
-*   **Supabase RLS and Triggers:** Due to the *Fat Client* nature, we will validate database writes by limiting with `ROW LEVEL SECURITY`: `auth.uid() = referee_id`.
-*   **Offline Conflict Prevention:** Implemented the *Last-Write-Wins* pattern via `local_updated_at` to reject temporal collisions when devices regain the internet.
-*   **Data Leakage Prevention:** Creation of `public_tournament_snapshot`, a read-only view free of PII (Personally Identifiable Information like emails/phones), preventing unauthorized downloading via TanStack Query Snapshots.
+#### Scoring por Deporte Investigado
 
-### Architectural Pivot: Open Roles and UUID Mismatch
-During the interactive design review, we discovered that the "External Referee" model was too lax and technically failed:
-1. The `referee_id` in matches pointed to the sports profile (`persons.id`), causing the RLS security policy (`auth.uid() = referee_id`) to systematically fail.
-2. It allowed any app user to be assigned as a referee regardless of whether the organizers authorized it or not.
+| Sport | Pts/Game | Win by 2 | Tiebreak | Golden Point |
+|-------|----------|----------|----------|--------------|
+| Tennis | 4 (15-30-40) | ✅ | 7 @ 6-6 | ❌ |
+| Padel | 4 (15-30-40) | ✅ | 7 @ 6-6 | ✅ @ 40-40 |
+| Pickleball | 11 | ✅ | ❌ | N/A |
+| Table Tennis | 11 | ✅ | ❌ | N/A (deuce @ 10-10) |
 
-**Applied Solution:**
-*   Created the authorization domain `TournamentStaff`. Now only users with a role (`ORGANIZER` or `EXTERNAL_REFEREE`) linked to a specific tournament can interact administratively with the matches (*Constraint* reinforced with RLS and subqueries in Supabase).
-*   Modified all `referee_id` keys to point to the Security infrastructure layer (`auth.users(id)`).
+#### Migration Files Created
 
-## Day 1 (Night): From Manager to SaaS Platform - Payment Engine (March 26, 2026)
-The business logic schema was designed to integrate the payment gateway (Stripe / Mercado Pago), documented in `design/PAYMENTS_BUSINESS_LOGIC.md`.
+```
+supabase/migrations/
+├── 00000000000031_add_sport_scoring_config.sql    # Columna JSONB
+├── 00000000000032_add_score_validation_trigger.sql # validate_score()
+├── 00000000000033_add_scorer_logic_functions.sql    # calculate_game/set_winner()
+├── 00000000000034_update_bracket_advancement_sport_rules.sql
+└── 00000000000035_seed_sports_with_scoring_config.sql
+```
 
-**Design Decisions:**
-*   **Payment State Machine:** Implemented over `tournament_entries`. The tournament bracket now IGNORES registrations that are in the `PENDING_PAYMENT` state.
-*   **Secure Webhooks:** Financial validation will be isolated in *Supabase Edge Functions*, protecting the database from fat clients (mobile).
+### Functions Implemented
 
-## Day 1 (Final): Enterprise Security Mitigations
-With the goal of bringing RallyOS to a secure corporate grade, advanced risk vectors were evaluated and direct mitigations were deployed at the database layer (`schema_security.sql`):
-1.  **Abolition of Manual Payments:** The possibility of recording "CASH_MANUAL" income was removed to prevent cash fraud by local organizers. The platform is 100% dependent on the online gateway for income validation.
-2.  **Time-Tampering Protection:** The offline synchronization function now blocks any attempt to overwrite data with "future" dates (e.g., advancing the phone clock), shielding the *Last-Write-Wins* pattern.
-3.  **Strict DDL Authorization:** Only the platform or the creator of a tournament can be assigned as the initial `ORGANIZER`, and only an organizer can invite more *Staff*, applying hard `ROW LEVEL SECURITY` on delegate insertion.
-4.  **Panic Button ("Undo Match"):** Created the stored procedure `rollback_match(id)` that allows an organizer to revert a mistakenly finished match, clearing future brackets and leaving the ELO accounting layer ready for recalculations.
+| Function | Descripción |
+|----------|-------------|
+| `validate_score(match_id, points_a, points_b)` | Valida win-by-2, lanza excepción si inválido |
+| `calculate_game_winner(score_a, score_b, config)` | Retorna 'A'/'B'/NULL |
+| `calculate_set_winner(sets_json, config)` | Maneja tiebreak, super tiebreak |
+| `is_tiebreak(game_a, game_b, config)` | Boolean helper |
 
-## Day 2: Engagement and Virality (Social Feed)
-Defined the architectural design for community social events to foster retention (documented in `design/SOCIAL_SHARING_ARCHITECTURE.md`).
+### Tests Results
 
-**Design Decisions:**
-*   **Event-Driven Approach:** All relevant activity (Upsets, new tournaments, champions) will be recorded as a JSON payload in the structured `community_feed` table.
-*   **"Spotify Wrapped" Export:** Opted for client-side UI development (rendering views to PNG in Expo) combined with Server-Side capture in Edge Functions (Open Graph Unfurling via WebLinks) to inject organic advertising through players' Instagram stories and WhatsApp groups.
+| Test | Resultado |
+|------|-----------|
+| RLS scores | ✅ PASS |
+| ELO History | ✅ PASS |
+| PII leakage | ✅ PASS |
+| Time-tampering | ✅ PASS (fix en test query) |
+| Staff self-elevation | ✅ PASS |
+| Entry status RLS | ✅ PASS |
 
-## Day 2 (Late): Context Future-Proofing (English Translation)
-Following the Spec-Driven Development philosophy and aiming for a future-proofed codebase, a decision was made to translate 100% of the architectural documentation, design specs, and SQL comments from Spanish to English. This ensures standard B2B/Enterprise practices and broader collaboration capabilities.
+### Custom Validation Tests (E2E)
 
-## Day 3: Ruthless Architectural Overhaul (March 31, 2026)
+| Score | Sport | Expected | Result |
+|-------|-------|----------|--------|
+| 0-0 | Padel | Valid (inicio) | ✅ PASS |
+| 4-2 | Padel | Valid | ✅ PASS |
+| 4-3 | Padel | Invalid | ✅ REJECTED |
+| 11-9 | Pickleball | Valid | ✅ PASS |
+| 12-10 | Golden Point | Valid | ✅ PASS |
 
-**Objective:** Fix critical logic flaws and data modeling "smells" identified during the architectural audit.
+### Bugs Fixed During Testing
 
-### 1. The "Real" ELO Engine
-Discovered that the previous ELO implementation was a placeholder that always assumed Entry A won.
-*   **Applied Solution:** Rewrote the `process_match_completion` trigger to perform real set-by-set comparison. It now correctly identifies the winner and applies the standard ELO formula with dynamic K-Factors (32/24/16) based on player experience.
+1. **0-0 score rejection**: Trigger rechazaba scores iniciales 0-0
+   - Fix: Agregué excepción para permitir 0-0 como estado inicial
+   - Migration: 00000000000032_add_score_validation_trigger.sql
 
-### 2. Deterministic Bracket Advancement
-The "First Empty Slot" pattern was identified as a major risk for bracket integrity.
-*   **Applied Solution:** Introduced `winner_to_slot` (ENUM 'A', 'B') in the `matches` table. The `advance_bracket_winner` trigger now places winners in precisely defined slots, ensuring the bracket remains structurally sound even with manual overrides or sync delays.
+2. **sets_json column missing**: Bracket advancement fallaba porque esperaba columna que no existe
+   - Fix: Cambié a usar points_a/points_b directamente
+   - Migration: 00000000000034_update_bracket_advancement_sport_rules.sql
 
-### 3. Data Normalization (Sets)
-The use of `JSONB` for match sets was flagged as "lazy modeling" that would hinder future performance and statistics.
-*   **Applied Solution:** Eliminated `scores.sets_json` and implemented a fully relational `match_sets` table. This provides SQL-native integrity and simplifies the synchronization of individual set results in an offline-first environment.
+3. **Inconsistent field names**: calculate_game_winner esperaba nombres distintos a los del scoring_config
+   - Fix: COALESCE acepta ambos formatos (points_to_win_game vs points_per_set)
+   - Migration: 00000000000033_add_scorer_logic_functions.sql
 
-### 4. Identity Consolidation
-Refined the relationship between `persons` (Athletes) and `auth.users` (Identity).
-*   **Applied Solution:** Enforced a 1:1 unique constraint on `persons.user_id` to prevent identity fragmentation. The system now treats `persons` as the master profile for all athletic context, whether linked to a registered account or existing as a "Shadow Profile".
+### E2E Flow Completed
 
-## Day 3 (Evening): Engagement & Integrity (Gamification & PIN Referee)
+```
+Bracket generated → Players assigned → Score 4-2 → Match FINISHED → Felipe advances to Final ✅
+```
 
-**Objective:** Transform RallyOS from a management tool into a social SaaS with self-sustaining operational logic.
+### Documentation Updated
 
-### 1. Gamification & Ranks
-Implemented a progression system to drive player retention.
-*   **Applied Solution:** Defined 5 ELO-based ranks (Bronze to Diamond) and established a ledger for automated achievements. Created a trigger to auto-adjust ranks on every match completion, providing immediate feedback to the player.
-
-### 2. PIN-Based Self-Refereeing (The "Invisible Referee")
-Addressed the operational cost of tournaments by enabling players to report scores securely.
-*   **Applied Solution:** Implemented a `pin_code` system for matches. Each match now generates a unique 4-digit PIN. Players can only submit scores if they provide this PIN (ensuring physical presence), while tournament staff retain administrative bypass capabilities.
-
-### 3. Identity Integrity Baseline
-Set the stage for future anti-smurfing measures.
-*   **Applied Solution:** Documented the "Trusted Athlete" roadmap, prioritizing social validation and ELO anomaly detection for the next phase of development.
-
-### 4. Localization & Global Readiness
-Prepared the platform for international expansion.
-*   **Applied Solution:** Implemented the `countries` master table and linked all core entities (Players, Clubs, Tournaments) to their respective geographic regions. Seeded the database with 8 major markets (COL, ARG, MEX, ESP, etc.), enabling country-based filtering and public nationality flags.
+- `webdocs/database/schema.md` → scoring_config + funciones de scoring
+- `webdocs/database/MIGRATION_INDEX.md` → Migrations 31-35
+- `webdocs/architecture/ER_DIAGRAM.md` → Updated
 
 ---
-*Current state: Backend architecture is 100% "Global Ready" and operationally autonomous. Ready for App Implementation. (March 31, 2026)*
 
-
-
+*Previous entries: See DEVELOPMENT_JOURNEY.md (archived)*
