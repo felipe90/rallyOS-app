@@ -43,7 +43,7 @@ CREATE TABLE round_robin_groups (
     
     CONSTRAINT unique_group_name_per_tournament UNIQUE (tournament_id, name),
     CONSTRAINT advancement_positive CHECK (advancement_count > 0),
-    CONSTRAINT name_length CHECK (char_length(name) <= 10)
+    CONSTRAINT name_length CHECK (char_length(name) BETWEEN 1 AND 50)
 );
 
 CREATE INDEX idx_rrg_tournament ON round_robin_groups(tournament_id);

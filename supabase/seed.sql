@@ -1,4 +1,5 @@
-SET search_path TO public;
+-- Include extensions schema for pgcrypto functions (gen_salt, crypt)
+SET search_path TO extensions, public;
 -- ============================================================
 -- RALLYOS: SEED DATA — Real-World Tournament Scenario
 -- ============================================================
@@ -83,7 +84,20 @@ VALUES
 -- 7. MATCHES (Semifinal bracket)
 -- NOTE: referee_id references auth.users. In local seed we use NULL
 -- to avoid FK dependency. In staging, replace with real auth user UUIDs.
+-- NOTE: Final MUST be inserted FIRST because semifinals reference it via next_match_id FK
 -- ────────────────────────────────────────
+
+-- Final (placeholder — winner TBD) - INSERT FIRST to satisfy FK
+INSERT INTO matches (id, category_id, entry_a_id, entry_b_id, referee_id, court_id, status, round_name)
+VALUES
+  ('00000000-0000-0000-0003-000000000003',
+   '00000000-0000-0000-0000-000000000020',
+   NULL,  -- Will be filled by bracket logic when semis finish
+   NULL,
+   NULL,
+   'Mesa-Central',
+   'SCHEDULED',
+   'Final');
 
 -- Semifinal 1: Felipe Wolf (ELO 1200, Seed 1) vs Carlos Perez (ELO 980, Seed 4)
 INSERT INTO matches (id, category_id, entry_a_id, entry_b_id, referee_id, court_id, status, round_name, next_match_id, winner_to_slot)
@@ -112,18 +126,6 @@ VALUES
    'Semifinal',
    '00000000-0000-0000-0003-000000000003',
    'B'); -- → points to Final (Slot B)
-
--- Final (placeholder — winner TBD)
-INSERT INTO matches (id, category_id, entry_a_id, entry_b_id, referee_id, court_id, status, round_name)
-VALUES
-  ('00000000-0000-0000-0003-000000000003',
-   '00000000-0000-0000-0000-000000000020',
-   NULL,  -- Will be filled by bracket logic when semis finish
-   NULL,
-   NULL,
-   'Mesa-Central',
-   'SCHEDULED',
-   'Final');
 
 -- ────────────────────────────────────────
 -- 8. SCORES & SETS (Relational Data)
