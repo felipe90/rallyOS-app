@@ -75,7 +75,7 @@ ATHLETE_STATS:          id, person_id, sport_id, current_elo, matches_played, ma
 TOURNAMENT_STAFF:       id, tournament_id, user_id, role, status, invite_mode, invited_by, expires_at
 TOURNAMENT_ENTRIES:     id, category_id, display_name, current_handicap, status, fee_amount_snap, checked_in_at
 ENTRY_MEMBERS:          id, entry_id, person_id
-MATCHES:                id, category_id, entry_a_id, entry_b_id, group_id, bracket_id, phase, round_number, next_match_id, loser_assigned_referee, referee_id, next_match_id, winner_to_slot, pin_code, court_id, status, round_name
+MATCHES:                id, category_id, entry_a_id, entry_b_id, group_id, bracket_id, phase, round_number, next_match_id, loser_assigned_referee, referee_id, winner_to_slot, pin_code, court_id, status, round_name
 SCORES:                 id, match_id, current_set, points_a, points_b
 MATCH_SETS:             id, match_id, set_number, points_a, points_b, is_finished
 ELO_HISTORY:            id, person_id, sport_id, match_id, previous_elo, new_elo, elo_change, change_type
@@ -269,7 +269,7 @@ match_phase:         ROUND_ROBIN, KNOCKOUT, BRONZE, FINAL
 │  │  ❌ Q1, Q2, Q3, Q4 cannot referee (diff group)   │        │
 │  └─────────────────────────────────────────────────────┘        │
 │                                                                 │
-│  ENFORCED BY: trg_validate_intra_group_referee                 │
+│  ENFORCED BY: trg_validate_referee_assignment (if referee_mode=INTRA_GROUP) │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
