@@ -129,16 +129,16 @@
 
 ## Success Criteria Checklist
 
-- [ ] Migration file created: `supabase/migrations/00000000000002_add_elo_history.sql`
-- [ ] Enum type `elo_change_type` created with 3 values
-- [ ] Table `elo_history` created with all 9 columns
-- [ ] Index `idx_elo_history_person_sport` on `(person_id, sport_id)`
-- [ ] Index `idx_elo_history_match_id` on `match_id`
-- [ ] RLS enabled on `elo_history` (already in 00000000000001)
-- [ ] SELECT policy exists for authenticated users
-- [ ] No INSERT/UPDATE/DELETE policies (blocked by RLS)
-- [ ] `supabase db reset` completes without errors
-- [ ] `docs/DOMAIN_MODEL_V2.md` updated to reflect schema
+- [x] Migration file created: `supabase/migrations/00000000000044_add_elo_history.sql`
+- [x] Enum type `elo_change_type` created with 4 values (MATCH_WIN, MATCH_LOSS, ADJUSTMENT, TOURNAMENT_BONUS)
+- [x] Table `elo_history` created with all 9 columns
+- [x] Index `idx_elo_history_person_sport` on `(person_id, sport_id)`
+- [x] Index `idx_elo_history_match_id` on `match_id`
+- [x] RLS enabled on `elo_history` (already in 00000000000001)
+- [x] SELECT policy exists for authenticated users
+- [x] No INSERT/UPDATE/DELETE policies (blocked by RLS)
+- [x] `supabase db reset` completes without errors
+- [x] `docs/DOMAIN_MODEL_V2.md` updated to reflect schema
 
 ---
 
