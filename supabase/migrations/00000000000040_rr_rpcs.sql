@@ -104,11 +104,11 @@ DECLARE
     v_category_id UUID;
 BEGIN
     -- Get category_id from group
-    SELECT c.id INTO v_category_id
+    SELECT te.category_id INTO v_category_id
     FROM round_robin_groups rrg
-    JOIN tournament_entries te ON te.category_id = c.id
-    JOIN group_members gm ON gm.entry_id = te.id
-    WHERE gm.group_id = p_group_id
+    JOIN group_members gm ON gm.group_id = rrg.id
+    JOIN tournament_entries te ON te.id = gm.entry_id
+    WHERE rrg.id = p_group_id
     LIMIT 1;
     
     -- Get all member entry_ids ordered by seed
