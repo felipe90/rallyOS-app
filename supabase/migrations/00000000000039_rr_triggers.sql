@@ -138,12 +138,12 @@ DECLARE
     v_pending_matches INTEGER;
     v_group_status group_status;
 BEGIN
-    -- Only trigger on status change to FINISHED or WALKED_OVER
-    IF OLD.status IN ('FINISHED', 'WALKED_OVER') THEN
+    -- Only trigger on status change to FINISHED or W_O
+    IF OLD.status IN ('FINISHED', 'W_O') THEN
         RETURN NEW;
     END IF;
     
-    IF NEW.status NOT IN ('FINISHED', 'WALKED_OVER') THEN
+    IF NEW.status NOT IN ('FINISHED', 'W_O') THEN
         RETURN NEW;
     END IF;
     
@@ -158,7 +158,7 @@ BEGIN
     SELECT COUNT(*) INTO v_pending_matches
     FROM matches
     WHERE group_id = v_group_id
-    AND status NOT IN ('FINISHED', 'WALKED_OVER', 'CANCELLED');
+    AND status NOT IN ('FINISHED', 'W_O', 'CANCELLED');
     
     -- Update group status
     IF v_pending_matches = 0 THEN
