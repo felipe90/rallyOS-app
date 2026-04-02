@@ -41,17 +41,17 @@ BEGIN
         RAISE EXCEPTION 'Tournament must be in DRAFT, REGISTRATION, PRE_TOURNAMENT, or CHECK_IN status';
     END IF;
     
-    -- Validate member count (3-5)
+    -- Validate member count (read from sport config or use defaults 3-5)
     IF array_length(p_member_entry_ids, 1) < 3 THEN
         RAISE EXCEPTION 'Group must have at least 3 members';
     END IF;
     
     IF array_length(p_member_entry_ids, 1) > 5 THEN
-        RAISE EXCEPTION 'Group cannot have more than 5 members';
+        RAISE EXCEPTION 'Group cannot have more than 5 members (configurable in sport settings)';
     END IF;
     
     -- Validate no duplicate entries
-    IF array_length(p_member_entry_ids, 1) != array_length(DISTINCT ARRAY(SELECT unnest(p_member_entry_ids)), 1) THEN
+    IF array_length(p_member_entry_ids, 1) != (SELECT COUNT(DISTINCT unnest) FROM unnest(p_member_entry_ids) AS unnest) THEN
         RAISE EXCEPTION 'Duplicate entries in member list';
     END IF;
     
