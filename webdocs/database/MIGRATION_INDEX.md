@@ -29,6 +29,8 @@ Pendientes: 0
 33: add_scorer_logic_functions.sql      - Game/Set Winner Functions (+ fix nombres de campos)
 34: update_bracket_advancement_sport_rules.sql - Sport Rules in Bracket (+ fix sets_json)
 35: seed_sports_with_scoring_config.sql - 4 Sports with Full Config
+36: add_third_place_flags.sql         - Third Place Match flags
+37: add_third_place_rpcs.sql          - Third Place Match RPCs (offer/accept/create)
 ```
 
 ---

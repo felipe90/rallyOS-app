@@ -159,6 +159,8 @@ pin_code:        text (4-digit, security)
 court_id:        text
 status:          match_status
 round_name:      text
+third_place_pending: boolean DEFAULT FALSE  # NEW
+third_place_accepted: boolean NULL        # NEW
 started_at:      timestamptz
 ended_at:        timestamptz
 created_at:      timestamptz

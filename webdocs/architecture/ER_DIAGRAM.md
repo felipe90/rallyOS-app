@@ -1,7 +1,7 @@
 # RallyOS: Entity Relationship Diagram
 
 **Generated**: 2026-04-02  
-**Last Updated**: Sport-Specific Scoring Rules Engine (COMPLETE + E2E Tests PASS)
+**Last Updated**: Third Place Match + Sport-Specific Scoring COMPLETE
 
 ---
 
