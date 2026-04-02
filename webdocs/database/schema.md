@@ -189,6 +189,7 @@ match_id:         uuid FK → matches (unique)
 current_set:      int
 points_a:         int
 points_b:         int
+recorded_by:      uuid FK → auth.users (nullable, auto-set by trigger)
 created_at:       timestamptz
 updated_at:       timestamptz
 ```

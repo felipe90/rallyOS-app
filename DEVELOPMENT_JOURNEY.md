@@ -432,4 +432,43 @@ b5f7ac9 feat: implement sport-agnostic round robin
 
 ---
 
+## Day 6b: Add recorded_by to Scores (April 2, 2026)
+
+### Fix: scores.recorded_by
+
+**Problema identificado durante walkthrough:**
+- La spec indicaba que `scores` debía tener `recorded_by` para saber quién registró el score
+- El flujo correcto: "el referee del match es quien registra los puntos"
+
+**Solución:**
+```sql
+-- Nueva migración: 00000000000041_scores_recorded_by.sql
+ALTER TABLE scores ADD COLUMN recorded_by UUID REFERENCES auth.users(id);
+
+-- Trigger para auto-setear
+CREATE OR REPLACE FUNCTION fn_set_score_recorder()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF TG_OP = 'INSERT' THEN
+        NEW.recorded_by := auth.uid();
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_set_score_recorder
+BEFORE INSERT ON scores
+FOR EACH ROW EXECUTE FUNCTION fn_set_score_recorder();
+```
+
+**Verificado:**
+```
+✅ Column created
+✅ Index created
+✅ Trigger created
+✅ FK to auth.users
+```
+
+---
+
 *Previous entries: See above*
