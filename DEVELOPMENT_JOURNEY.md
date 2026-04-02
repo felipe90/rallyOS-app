@@ -317,4 +317,119 @@ Integrado en `supabase/seed.sql`:
 
 ---
 
+## Day 6: Final Evaluation & Fixes (April 2, 2026)
+
+### Evaluación Final - Bugs Encontrados
+
+Durante la auditoría crítica del sistema, se encontraron múltiples problemas que fueron corregidos:
+
+#### 1. Enums No Idempotentes
+**Problema**: Las migraciones creaban enums sin verificar si ya existían, causando errores en reset.
+
+**Fix**: Usar `DO $$` blocks con `IF NOT EXISTS`:
+
+```sql
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'group_status') THEN
+        CREATE TYPE group_status AS ENUM ('PENDING', 'IN_PROGRESS', 'COMPLETED');
+    END IF;
+END $$;
+```
+
+#### 2. tournament_status Enum Conflict
+**Problema**: La migración 38 intentaba crear `tournament_status` completo cuando ya existía en init_schema.sql.
+
+**Fix**: Usar `ALTER TYPE ADD VALUE`:
+
+```sql
+ALTER TYPE tournament_status ADD VALUE IF NOT EXISTS 'PRE_TOURNAMENT';
+ALTER TYPE tournament_status ADD VALUE IF NOT EXISTS 'SUSPENDED';
+ALTER TYPE tournament_status ADD VALUE IF NOT EXISTS 'CANCELLED';
+```
+
+#### 3. Duplicate Score Validation Trigger
+**Problema**: La migración 39 redefinía el trigger `trg_validate_score` que ya existía en migración 32.
+
+**Fix**: Removido el trigger duplicado. El trigger de migración 32 ya maneja validación sport-agnostic.
+
+#### 4. SQL Syntax Error en Duplicate Check
+**Problema**: 
+```sql
+-- ERROR:
+array_length(p_member_entry_ids, 1) != array_length(DISTINCT ARRAY(...), 1)
+```
+
+**Fix**:
+```sql
+array_length(p_member_entry_ids, 1) != (SELECT COUNT(DISTINCT unnest) FROM unnest(p_member_entry_ids))
+```
+
+#### 5. person_id Not Retrieved
+**Problema**: `create_round_robin_group` no obtenía `person_id` de `entry_members`.
+
+**Fix**:
+```sql
+INSERT INTO group_members (group_id, entry_id, person_id, seed)
+SELECT 
+    v_group_id,
+    v_entry_id,
+    (SELECT person_id FROM entry_members WHERE entry_id = v_entry_id LIMIT 1),
+    v_seed;
+```
+
+#### 6. JOIN Syntax Error
+**Problema**: `generate_round_robin_matches` tenía JOIN incompleto.
+
+**Fix**:
+```sql
+-- CORRECTO:
+SELECT te.category_id INTO v_category_id
+FROM round_robin_groups rrg
+JOIN group_members gm ON gm.group_id = rrg.id
+JOIN tournament_entries te ON te.id = gm.entry_id
+WHERE rrg.id = p_group_id
+LIMIT 1;
+```
+
+#### 7. Enum Value Mismatch
+**Problema**: Triggers usaban `WALKED_OVER` pero el enum es `W_O`.
+
+**Fix**: Cambiado a `W_O` en todos los triggers.
+
+### Database Reset Test Results
+
+```
+✅ round_robin_groups: 1 table
+✅ group_members: 1 table  
+✅ knockout_brackets: 1 table
+✅ bracket_slots: 1 table
+
+✅ Enums: group_status, member_status, bracket_status, match_phase, assignment_type
+✅ Triggers: 7 triggers created
+✅ Functions: 11 RR functions created
+
+✅ create_round_robin_group() - TESTED SUCCESS
+   └── Grupo "A" creado con 3 miembros
+   └── 3 matches generados (n*(n-1)/2 = 3)
+   └── phase = ROUND_ROBIN
+   └── round_number = 1, 1, 2
+```
+
+### Commits del Día
+
+```
+3a4455d fix: get person_id from entry_members in create_round_robin_group
+648f43a fix: SQL syntax error in generate_round_robin_matches category_id query
+5e7d97b fix: use W_O instead of WALKED_OVER (correct enum value)
+d400dca fix: SQL syntax error in create_round_robin_group duplicate check
+a08830e fix: make migrations idempotent, fix enum conflicts
+277a701 fix: correct Mermaid ERD syntax
+6277c44 fix: remove duplicate next_match_id in MATCHES
+c477266 fix: make all triggers read sport config
+b5f7ac9 feat: implement sport-agnostic round robin
+```
+
+---
+
 *Previous entries: See above*
