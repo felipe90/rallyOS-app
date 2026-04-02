@@ -14,8 +14,8 @@ Implements the entry status state machine for `tournament_entries` to track paym
 **Description:** Create migration file `00000000000003_add_entry_status.sql` in `supabase/migrations/`  
 **Complexity:** LOW  
 **Verification:**
-- [ ] File exists at `supabase/migrations/00000000000003_add_entry_status.sql`
-- [ ] File starts with `-- Migration: 00000000000003_add_entry_status`
+- [x] File exists at `supabase/migrations/00000000000003_add_entry_status.sql`
+- [x] File starts with `-- Migration: 00000000000003_add_entry_status`
 
 ### 1.2 Create Enum Type entry_status
 
@@ -23,9 +23,9 @@ Implements the entry status state machine for `tournament_entries` to track paym
 **Description:** Create PostgreSQL enum type `entry_status` with values: `'PENDING_PAYMENT'`, `'CONFIRMED'`, `'CANCELLED'`  
 **Complexity:** LOW  
 **Verification:**
-- [ ] Migration contains `CREATE TYPE entry_status AS ENUM (...)`
-- [ ] All three values present in correct order
-- [ ] Run `SELECT enumlabel FROM pg_enum WHERE enumtypid = 'entry_status'::regtype` confirms values
+- [x] Migration contains `CREATE TYPE entry_status AS ENUM (...)`
+- [x] All three values present in correct order
+- [x] Run `SELECT enumlabel FROM pg_enum WHERE enumtypid = 'entry_status'::regtype` confirms values
 
 ### 1.3 Add Status Column
 
@@ -33,9 +33,9 @@ Implements the entry status state machine for `tournament_entries` to track paym
 **Description:** Add column `status` to `tournament_entries` table with default `'PENDING_PAYMENT'`  
 **Complexity:** LOW  
 **Verification:**
-- [ ] Migration contains `ALTER TABLE tournament_entries ADD COLUMN status entry_status NOT NULL DEFAULT 'PENDING_PAYMENT'`
-- [ ] Column is NOT NULL
-- [ ] Default value enforced at database level
+- [x] Migration contains `ALTER TABLE tournament_entries ADD COLUMN status entry_status NOT NULL DEFAULT 'PENDING_PAYMENT'`
+- [x] Column is NOT NULL
+- [x] Default value enforced at database level
 
 ### 1.4 Add fee_amount_snap Column
 
@@ -43,9 +43,9 @@ Implements the entry status state machine for `tournament_entries` to track paym
 **Description:** Add column `fee_amount_snap` (INTEGER) to capture tournament fee at registration time  
 **Complexity:** LOW  
 **Verification:**
-- [ ] Migration contains `ALTER TABLE tournament_entries ADD COLUMN fee_amount_snap INTEGER`
-- [ ] Column accepts NULL (price may not be set for all entries)
-- [ ] Column is INTEGER (stored in cents)
+- [x] Migration contains `ALTER TABLE tournament_entries ADD COLUMN fee_amount_snap INTEGER`
+- [x] Column accepts NULL (price may not be set for all entries)
+- [x] Column is INTEGER (stored in cents)
 
 ### 1.5 Add RLS Policy for Status Updates
 
@@ -53,9 +53,9 @@ Implements the entry status state machine for `tournament_entries` to track paym
 **Description:** Add RLS policy allowing only entry owner OR ORGANIZER role to UPDATE `status` column  
 **Complexity:** MED  
 **Verification:**
-- [ ] Policy checks `(auth.uid() = user_id) OR (hasOrganizerRole(...))`
-- [ ] Policy applies to UPDATE only (not SELECT/INSERT)
-- [ ] Existing SELECT policy remains unchanged
+- [x] Policy checks `(auth.uid() = user_id) OR (hasOrganizerRole(...))`
+- [x] Policy applies to UPDATE only (not SELECT/INSERT)
+- [x] Existing SELECT policy remains unchanged
 
 ---
 
@@ -67,9 +67,9 @@ Implements the entry status state machine for `tournament_entries` to track paym
 **Description:** Execute migration against local Supabase instance  
 **Complexity:** LOW  
 **Verification:**
-- [ ] `supabase db reset` completes without errors
-- [ ] No migration conflicts with existing schema
-- [ ] All previous migrations still intact
+- [x] `supabase db reset` completes without errors
+- [x] No migration conflicts with existing schema
+- [x] All previous migrations still intact
 
 ### 2.2 Verify Columns Exist with Correct Defaults
 
@@ -77,9 +77,9 @@ Implements the entry status state machine for `tournament_entries` to track paym
 **Description:** Query database to confirm columns exist with correct types and defaults  
 **Complexity:** LOW  
 **Verification:**
-- [ ] `\d tournament_entries` shows `status` column as `entry_status` type
-- [ ] `\d tournament_entries` shows `fee_amount_snap` column as `integer`
-- [ ] `SELECT column_default FROM information_schema.columns WHERE table_name = 'tournament_entries' AND column_name = 'status'` returns `'PENDING_PAYMENT'`
+- [x] `\d tournament_entries` shows `status` column as `entry_status` type
+- [x] `\d tournament_entries` shows `fee_amount_snap` column as `integer`
+- [x] `SELECT column_default FROM information_schema.columns WHERE table_name = 'tournament_entries' AND column_name = 'status'` returns `'PENDING_PAYMENT'`
 
 ### 2.3 Test INSERT Creates PENDING_PAYMENT by Default
 
@@ -87,9 +87,9 @@ Implements the entry status state machine for `tournament_entries` to track paym
 **Description:** Insert a test entry without specifying status and verify default assignment  
 **Complexity:** LOW  
 **Verification:**
-- [ ] INSERT without status column succeeds
-- [ ] `SELECT status FROM tournament_entries WHERE id = <new_id>` returns `'PENDING_PAYMENT'`
-- [ ] Cleanup test entry after verification
+- [x] INSERT without status column succeeds
+- [x] `SELECT status FROM tournament_entries WHERE id = <new_id>` returns `'PENDING_PAYMENT'`
+- [x] Cleanup test entry after verification
 
 ---
 
@@ -101,8 +101,8 @@ Implements the entry status state machine for `tournament_entries` to track paym
 **Description:** Update `supabase/seed.sql` to set `status = 'CONFIRMED'` for all existing entries (matching SUCCEEDED payments)  
 **Complexity:** LOW  
 **Verification:**
-- [ ] seed.sql contains `status = 'CONFIRMED'` for entry inserts
-- [ ] All tournament_entries inserts in seed have status set
+- [x] seed.sql contains `status = 'CONFIRMED'` for entry inserts
+- [x] All tournament_entries inserts in seed have status set
 
 ### 3.2 Add fee_amount_snap Values
 
@@ -110,9 +110,9 @@ Implements the entry status state machine for `tournament_entries` to track paym
 **Description:** Add `fee_amount_snap` values to seed entries matching tournament fees  
 **Complexity:** LOW  
 **Verification:**
-- [ ] Each seed entry has `fee_amount_snap` set
-- [ ] Values are reasonable integers (tournament fee in cents)
-- [ ] Values match corresponding tournament fees
+- [x] Each seed entry has `fee_amount_snap` set
+- [x] Values are reasonable integers (tournament fee in cents)
+- [x] Values match corresponding tournament fees
 
 ### 3.3 Verify Seed Loads Correctly
 
@@ -120,9 +120,9 @@ Implements the entry status state machine for `tournament_entries` to track paym
 **Description:** Run `supabase db reset` and verify all seed entries have correct status  
 **Complexity:** LOW  
 **Verification:**
-- [ ] `supabase db reset` completes successfully
-- [ ] `SELECT status, COUNT(*) FROM tournament_entries GROUP BY status` shows all entries as `'CONFIRMED'`
-- [ ] `SELECT fee_amount_snap FROM tournament_entries` returns no NULLs for entries
+- [x] `supabase db reset` completes successfully
+- [x] `SELECT status, COUNT(*) FROM tournament_entries GROUP BY status` shows all entries as `'CONFIRMED'`
+- [x] `SELECT fee_amount_snap FROM tournament_entries` returns no NULLs for entries
 
 ---
 
@@ -134,10 +134,10 @@ Implements the entry status state machine for `tournament_entries` to track paym
 **Description:** Add test cases in `supabase/tests/security_tests.sql` for status update scenarios  
 **Complexity:** MED  
 **Verification:**
-- [ ] Test: Owner can UPDATE status from PENDING_PAYMENT to CONFIRMED
-- [ ] Test: Owner can UPDATE status from PENDING_PAYMENT to CANCELLED
-- [ ] Test: ORGANIZER can UPDATE another user's entry status
-- [ ] All tests pass with `psql ... -f supabase/tests/security_tests.sql`
+- [x] Test: Owner can UPDATE status from PENDING_PAYMENT to CONFIRMED
+- [x] Test: Owner can UPDATE status from PENDING_PAYMENT to CANCELLED
+- [x] Test: ORGANIZER can UPDATE another user's entry status
+- [x] All tests pass with `psql ... -f supabase/tests/security_tests.sql`
 
 ### 4.2 Verify RLS Blocks Non-Owners from Changing Status
 
@@ -145,10 +145,10 @@ Implements the entry status state machine for `tournament_entries` to track paym
 **Description:** Add test case confirming RLS blocks authenticated non-owners from updating status  
 **Complexity:** MED  
 **Verification:**
-- [ ] Test: Authenticated user (not owner, not organizer) cannot UPDATE status
-- [ ] Test: Unauthenticated user cannot UPDATE status
-- [ ] Test confirms RLS returns 0 rows affected
-- [ ] All security tests pass
+- [x] Test: Authenticated user (not owner, not organizer) cannot UPDATE status
+- [x] Test: Unauthenticated user cannot UPDATE status
+- [x] Test confirms RLS returns 0 rows affected
+- [x] All security tests pass
 
 ---
 
