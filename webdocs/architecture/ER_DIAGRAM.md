@@ -23,20 +23,20 @@ erDiagram
     ROUND_ROBIN_GROUPS ||--o{ GROUP_MEMBERS : contains
     ROUND_ROBIN_GROUPS ||--o{ MATCHES : organizes
     
-    GROUP_MEMBERS ||--o{ PERSONS : belongs
-    GROUP_MEMBERS ||--o{ TOURNAMENT_ENTRIES : linked
+    GROUP_MEMBERS }o--|| PERSONS : belongs
+    GROUP_MEMBERS }o--|| TOURNAMENT_ENTRIES : linked
     
     KNOCKOUT_BRACKETS ||--o{ BRACKET_SLOTS : contains
     KNOCKOUT_BRACKETS ||--o{ MATCHES : organizes
     
-    BRACKET_SLOTS ||--o{ TOURNAMENT_ENTRIES : occupied
+    BRACKET_SLOTS }o--|| TOURNAMENT_ENTRIES : occupied
     
     CATEGORIES ||--o{ TOURNAMENT_ENTRIES : registers
     CATEGORIES ||--o{ MATCHES : organizes
     
     USERS ||--o{ PERSONS : links
     USERS ||--o{ TOURNAMENT_STAFF : assigned
-    USERS ||--|| REFEREE_ASSIGNMENTS : assigned
+    USERS ||--o{ REFEREE_ASSIGNMENTS : assigned
     
     PERSONS ||--o{ ATHLETE_STATS : has
     PERSONS ||--o{ ENTRY_MEMBERS : belongs
@@ -50,11 +50,9 @@ erDiagram
     TOURNAMENT_ENTRIES ||--o{ PAYMENTS : has
     
     MATCHES ||--|| SCORES : has
-    MATCHES ||--o{ MATCHES : next_match (winner advances)
-    MATCHES ||--o| REFEREE_ASSIGNMENTS : assigned
     MATCHES ||--o{ MATCH_SETS : tracked
+    MATCHES ||--o{ REFEREE_ASSIGNMENTS : assigned
     
-    REFEREE_ASSIGNMENTS ||--|| USERS : referee
     REFEREE_ASSIGNMENTS }o--|| USERS : assigned_by
     
     ELO_HISTORY }o--|| PERSONS : for
