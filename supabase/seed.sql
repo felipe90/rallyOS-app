@@ -1,3 +1,4 @@
+SET search_path TO public;
 -- ============================================================
 -- RALLYOS: SEED DATA — Real-World Tournament Scenario
 -- ============================================================
