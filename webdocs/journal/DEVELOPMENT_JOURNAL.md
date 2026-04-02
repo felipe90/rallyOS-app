@@ -498,3 +498,61 @@ RALLYOS CORE:         🚀 READY FOR MOBILE APP
 ```
 
 *Journal entry updated: 2026-03-31*
+
+---
+
+## 2026-04-02 — UX Strategy & Flow Blueprinting (Mobile, Desktop, TV)
+
+### Session Overview
+
+Defined the full UX roadmap for the RallyOS mobile ecosystem, including critical flows for Players/Organizers and expanding the architecture to support Desktop Admin and TV Scoreboards.
+
+### 🔴 UX FLOW DEFINITION (Mobile-First)
+
+#### 1. Tournament Lifecycle Completion
+- **Missing Flows Detailed**: Documented the missing critical steps from `flows-inventory.md`.
+- **New Flow Specs**: 
+    - `attendance-check-in.md`: Táctil, high-density checking (CU-03).
+    - `bracket-management.md`: Canvas interactivo para avance de rondas (CU-04).
+    - `tournament-results.md`: Cierre formal y visualización de podio (CU-08).
+- **Player Journey**:
+    - `home-feed.md`: Descubrimiento social y registro rápido (CU-10).
+    - `post-match-feedback.md`: Loop viral de ELO y sharing (CU-06).
+
+### 🔵 DESKTOP & TV EXPANSION (SaaS Scale)
+
+#### 1. Organizer Admin Dashboard
+- **Layout**: Arquitectura de 3 zonas (Sidebar, High-Density Grid, Quick Action Panel).
+- **Vibe**: "Command Center" para gestión profesional de torneos.
+- **Decision**: Mantener el mismo stack (Expo Web) pero con layout responsivo real.
+
+#### 2. Public TV Scoreboard
+- **Feature**: Interfaz de solo-lectura para Smart TVs/Laptops en clubes.
+- **Tech**: Integración nativa con **Supabase Realtime** para actualización de scores sin interacción.
+- **Security**: Ruta pública `/display/:id` protegida por RLS pero accesible sin login.
+
+### Files Created/Modified
+
+```yaml
+UX/flows/:
+├── attendance-check-in.md
+├── bracket-management.md
+├── tournament-results.md
+├── home-feed.md
+└── post-match-feedback.md
+
+UX/flows-desktop/:
+├── admin-desktop-layout.md
+└── tv-public-scoreboard.md
+
+UX/:
+├── README.md (Updated structure)
+└── flows-inventory.md (Linked all detailed specs)
+```
+
+### Architectural Decisions (ADR Context)
+- **Unified Stack**: Se mantiene Expo/RNW para el MVP de Web/Desktop para maximizar reutilización de código.
+- **Outdoor-First UI**: Se priorizaron targets táctiles grandes y contraste máximo para legibilidad en canchas y bajo el sol.
+
+*Journal entry updated: 2026-04-02*
+
