@@ -2,6 +2,145 @@
 
 *Last updated: April 2, 2026*
 
+## Day 5b: Sport-Agnostic Refactor (April 2, 2026)
+
+### Problem Identified
+
+**CRÍTICO**: La implementación inicial de Round Robin Groups tenía asunciones específicas de Table Tennis hardcodeadas:
+
+1. **"El perdedor arbitra al ganador"** — ES ESPECÍFICO de TT
+2. **Intra-group referee** — ES ESPECÍFICO de TT amateur
+3. **Grupos de 3-5** — Puede variar por deporte
+
+**Esto contradice el pilar fundamental de RallyOS: "sport-agnostic by design"**
+
+### Investigación Realizada
+
+| Deporte | Grupos? | KO? | Referees | "Perdedor arbitra"? |
+|---------|---------|-----|----------|---------------------|
+| Table Tennis | ✅ 3-5 | ✅ | Compañeros grupo | ✅ SÍ |
+| Padel Americano | ❌ NO | ❌ NO | Ninguno | ❌ NO |
+| Padel Mexicano | ✅ 3-4 | ✅ | Rotan | ⚠️ A veces |
+| Tennis | ⚠️ Opcional | ✅ | Umpires pro | ❌ NO |
+| Badminton | ✅ 4-6 | ✅ | Umpires pro | ❌ NO |
+
+### Solution: Sport-Agnostic Configuration
+
+**Nueva spec creada**: `spec-dom-04-tournament-format-config.md`
+
+```json
+{
+  "tournament_format": {
+    "structure": "ROUND_ROBIN_THEN_KNOCKOUT",
+    "referee_mode": "INTRA_GROUP",
+    "loser_referees_winner": true,
+    "group_size": { "min": 3, "max": 5 }
+  }
+}
+```
+
+**Config por deporte**:
+- **TT**: `referee_mode=INTRA_GROUP`, `loser_referees_winner=true`
+- **Padel Americano**: `structure=AMERICANO`, `referee_mode=NONE`
+- **Tennis**: `structure=KNOCKOUT_ONLY`, `referee_mode=ORGANIZER`
+- **Badminton**: `referee_mode=EXTERNAL`, `loser_referees_winner=false`
+
+### Specs Actualizadas
+
+```
+specs/domain/
+├── spec-dom-01-entities.md       # Ahora con notas de sport-agnosticidad
+├── spec-dom-02-aggregates.md     # Reglas de referee condicionales
+├── spec-dom-03-business-rules.md # Configurable por sport
+└── spec-dom-04-tournament-format-config.md  # NUEVA: Config completa
+```
+
+### Lessons Learned
+
+> **Pilar fundamental de RallyOS**: "Sport-Agnostic by Design"
+> 
+> Nunca hardcodear asunciones de un deporte específico. Todo debe ser configurable.
+
+---
+
+## Day 5: Round Robin Groups & Loser-As-Referee Flow (April 2, 2026)
+
+### Problem Identified
+
+RallyOS necesitaba soportar el flujo real de torneos amateur de Table Tennis:
+1. **Grupos Round Robin** (3-5 jugadores por grupo)
+2. **Arbitraje intra-grupo** (solo compañeros del mismo grupo pueden arbitrar)
+3. **"El perdedor arbitra al ganador"** (regla especial)
+4. **Transición a llaves KO** post-round-robin
+
+### Solution Designed
+
+Siguiendo el flujo Domain → DB → Arquitectura:
+
+#### Phase 1: Domain Model (Specs)
+```
+specs/domain/
+├── spec-dom-01-entities.md       # Entidades (Torneo, Grupo, Partido, etc.)
+├── spec-dom-02-aggregates.md      # Aggregates e invariantes
+└── spec-dom-03-business-rules.md  # Reglas de negocio (3-5 jugadores, seeding, etc.)
+```
+
+#### Phase 2: Database Schema
+```
+supabase/migrations/
+├── 00000000000038_round_robin_tables.sql  # Tablas nuevas
+├── 00000000000039_rr_triggers.sql          # Triggers de validación
+└── 00000000000040_rr_rpcs.sql             # RPCs de operaciones
+```
+
+**Nuevas tablas:**
+- `round_robin_groups` — Grupos de 3-5 jugadores
+- `group_members` — Miembros con seed y status
+- `knockout_brackets` — Llave de KO
+- `bracket_slots` — Posiciones en la llave
+
+**Nuevos enums:**
+- `group_status`: PENDING, IN_PROGRESS, COMPLETED
+- `member_status`: ACTIVE, WALKED_OVER, DISQUALIFIED
+- `match_phase`: ROUND_ROBIN, KNOCKOUT, BRONZE, FINAL
+- `assignment_type`: AUTOMATIC, MANUAL, LOSER_ASSIGNED
+
+**Nuevos triggers:**
+| Trigger | Propósito |
+|---------|-----------|
+| trg_validate_group_member_count | Max 5 miembros |
+| trg_unique_person_per_tournament | Un grupo por persona |
+| trg_unique_seed_per_group | Seeds únicos |
+| trg_update_group_status | Auto-completar grupo |
+| trg_validate_intra_group_referee | Referee del mismo grupo |
+| trg_track_loser_for_referee | Guardar perdedor para próximo partido |
+
+**Nuevas RPCs:**
+| RPC | Propósito |
+|-----|-----------|
+| create_round_robin_group() | Crear grupo + matches |
+| generate_round_robin_matches() | Schedule circular |
+| suggest_intra_group_referee() | Sugerir referee |
+| assign_loser_as_referee() | "El perdedor arbitra" |
+| calculate_group_standings() | Clasificación |
+| generate_bracket_from_groups() | Generar KO |
+
+#### Phase 3: Architecture (Specs)
+```
+specs/architecture/
+├── spec-arch-01-tournament-state-machine.md  # Estados del torneo
+├── spec-arch-02-group-management.md           # UI de grupos
+├── spec-arch-03-referee-flow.md               # Flujo de arbitraje
+└── spec-arch-04-score-entry.md                # Entrada manual de scores
+```
+
+### Documentación Actualizada
+
+- `webdocs/database/schema.md` → Nuevas tablas, enums, triggers, RPCs
+- `webdocs/architecture/ER_DIAGRAM.md` → Nuevas relaciones y flows
+
+---
+
 ## Day 5: Sport-Specific Scoring Rules Engine (April 2, 2026)
 
 ### Problem Identified
@@ -98,4 +237,58 @@ Bracket generated → Players assigned → Score 4-2 → Match FINISHED → Feli
 
 ---
 
-*Previous entries: See DEVELOPMENT_JOURNEY.md (archived)*
+## Day 5: Implementation & Testing (April 2, 2026)
+
+### Objective: Implementar Staff & Player-As-Referee System
+
+#### Migraciones Creadas
+
+| # | Archivo | Descripción |
+|---|---------|-------------|
+| 26 | `staff_enhanced.sql` | ENUM staff_status, columnas en tournament_staff |
+| 27 | `referee_pool.sql` | referee_volunteers, referee_assignments, vista available_referees |
+| 28 | `staff_rpcs.sql` | 9 RPCs: assign_staff, invite_staff, accept/reject, toggle_volunteer, generate_suggestions, etc. |
+| 29 | `staff_rls_update.sql` | RLS policies actualizadas |
+
+#### Seed Actualizado
+
+Integrado en `supabase/seed.sql`:
+- 11 usuarios de test (auth.users)
+- 23 personas (11 con auth + 12 shadow profiles)
+- 2 torneos (v1 LIVE con matches, v2 DRAFT)
+- 3 categorías
+- 20 entries
+- 5 tournament_staff (1 organizer, 2 referees pendientes)
+
+#### Fixes Aplicados
+
+1. **Índices en vistas**: Removido índices en `available_referees` (no soportado)
+2. **Club owner_user_id**: FK a auth.users requiere usuario existente
+3. **Tournament club_id**: Removido del seed (columna no existe en schema)
+4. **Auth.users FK**: Creados usuarios de test antes de persons
+5. **Seed order**: Integración directa en seed.sql (migraciones se ejecutan antes)
+6. **Sports dependency**: Uso de subqueries para sports no existentes aún
+7. **Score validation**: Corregido seed original con scores inválidos
+
+#### Documentación Actualizada
+
+- `webdocs/database/schema.md`: Nuevas tablas, enums, triggers, RPCs
+- `webdocs/architecture/ER_DIAGRAM.md`: Nuevas relaciones
+- `webdocs/architecture/ARCHITECTURE_DIAGRAMS.md`: Nuevos flows
+
+#### Estado Final
+
+```
+✅ Database Reset: SUCCESS
+✅ Sports: 4
+✅ Users: 11
+✅ Persons: 23
+✅ Tournaments: 2
+✅ Categories: 3
+✅ Entries: 20
+✅ Staff: 5 (1 organizer, 2 pending referees)
+```
+
+---
+
+*Previous entries: See above*

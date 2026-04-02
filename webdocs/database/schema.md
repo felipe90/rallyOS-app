@@ -1,7 +1,7 @@
 # RallyOS: Database Schema
 
 **Generated**: 2026-03-31 (Post-Architectural Overhaul)  
-**Last Updated**: 2026-04-02 (Sport-Specific Scoring Rules Engine + Tests)
+**Last Updated**: 2026-04-02 (Round Robin Groups + Loser-As-Referee Flow)
 
 > Para DDL completo ver las migraciones en `supabase/migrations/`
 
@@ -34,9 +34,23 @@ created_at:           timestamptz
   "super_tiebreak_points": 10,
   "golden_point": { "enabled": true, "at": 40 },
   "deuce_at": 10,
-  "min_difference": 2
+  "min_difference": 2,
+  "tournament_format": {
+    "structure": "ROUND_ROBIN_THEN_KNOCKOUT",
+    "referee_mode": "INTRA_GROUP",
+    "loser_referees_winner": true,
+    "group_size": { "min": 3, "max": 5 },
+    "advancement_count": 2,
+    "has_third_place": false,
+    "manual_score_entry": true
+  }
 }
 ```
+
+**Configuración Sport-Agnostic:**
+- `structure`: KNOCKOUT_ONLY | ROUND_ROBIN_ONLY | ROUND_ROBIN_THEN_KNOCKOUT | SWISS_THEN_KNOCKOUT | AMERICANO | MEXICAN | LEAGUE | CUSTOM
+- `referee_mode`: NONE | EXTERNAL | INTRA_GROUP | ROTATING | SELF | ORGANIZER
+- `loser_referees_winner`: true = el perdedor arbitra al ganador (TT), false = no aplica
 
 ### TOURNAMENTS
 ```yaml
@@ -274,6 +288,7 @@ user_id:        uuid FK → auth.users
 assigned_by:    uuid FK → auth.users (nullable)
 is_suggested:   boolean DEFAULT FALSE  # True if auto-generated
 is_confirmed:   boolean DEFAULT FALSE  # True if organizer confirmed
+assignment_type: assignment_type  # AUTOMATIC, MANUAL, LOSER_ASSIGNED
 created_at:     timestamptz
 ```
 
@@ -288,13 +303,69 @@ created_at:    timestamptz
 
 ---
 
+## Tablas de Round Robin *(NEW)*
+
+### ROUND_ROBIN_GROUPS
+```yaml
+id:               uuid
+tournament_id:    uuid FK → tournaments
+name:             text  # 'A', 'B', 'C', etc.
+advancement_count: int DEFAULT 2  # Cuántos avanzan a bracket
+status:           group_status  # PENDING, IN_PROGRESS, COMPLETED
+created_at:       timestamptz
+updated_at:       timestamptz
+UNIQUE(tournament_id, name)
+```
+
+### GROUP_MEMBERS
+```yaml
+id:             uuid
+group_id:       uuid FK → round_robin_groups
+person_id:      uuid FK → persons
+entry_id:       uuid FK → tournament_entries
+seed:           int  # 1 = cabeza de grupo
+status:         member_status  # ACTIVE, WALKED_OVER, DISQUALIFIED
+check_in_at:    timestamptz
+round_bye:      int  # Ronda donde tiene BYE (nullable)
+created_at:     timestamptz
+UNIQUE(group_id, person_id)
+UNIQUE(group_id, entry_id)
+UNIQUE(group_id, seed)
+```
+
+### KNOCKOUT_BRACKETS
+```yaml
+id:                uuid
+tournament_id:     uuid FK → tournaments
+status:            bracket_status  # PENDING, IN_PROGRESS, COMPLETED
+third_place_enabled: boolean DEFAULT FALSE
+created_at:        timestamptz
+updated_at:        timestamptz
+UNIQUE(tournament_id)
+```
+
+### BRACKET_SLOTS
+```yaml
+id:           uuid
+bracket_id:   uuid FK → knockout_brackets
+position:     int  # Posición en la llave
+round:        int  # Ronda (1=quarters, 2=semis, etc.)
+round_name:   text  # 'Quarterfinals', 'Semifinals', 'Final'
+entry_id:     uuid FK → tournament_entries (nullable)
+seed_source:  text  # 'group_a_1', 'group_b_2', etc.
+created_at:   timestamptz
+UNIQUE(bracket_id, position)
+```
+
+---
+
 ## Enums
 
 ```yaml
 # Existing Enums
 athlete_rank:        BRONZE, SILVER, GOLD, PLATINUM, DIAMOND
 sport_scoring_system: POINTS, GAMES
-tournament_status:    DRAFT, REGISTRATION, CHECK_IN, LIVE, COMPLETED
+tournament_status:    DRAFT, REGISTRATION, PRE_TOURNAMENT, CHECK_IN, LIVE, SUSPENDED, COMPLETED, CANCELLED
 match_status:        SCHEDULED, CALLING, READY, LIVE, FINISHED, W_O, SUSPENDED
 game_mode:           SINGLES, DOUBLES, TEAMS
 bracket_system:      SINGLE_ELIMINATION, ROUND_ROBIN
@@ -302,9 +373,16 @@ entry_status:       PENDING_PAYMENT, CONFIRMED, CANCELLED
 elo_change_type:     MATCH_WIN, MATCH_LOSS, ADJUSTMENT
 payment_status:     REQUIRES_PAYMENT, PROCESSING, SUCCEEDED, FAILED, REFUNDED
 
-# NEW Enums (v2)
+# NEW Enums (v2 - Staff)
 staff_role:          ORGANIZER, EXTERNAL_REFEREE, PLAYER_REFEREE
 staff_status:        PENDING, ACTIVE, REJECTED, REVOKED
+
+# NEW Enums (v3 - Round Robin)
+group_status:        PENDING, IN_PROGRESS, COMPLETED
+member_status:       ACTIVE, WALKED_OVER, DISQUALIFIED
+bracket_status:      PENDING, IN_PROGRESS, COMPLETED
+match_phase:         ROUND_ROBIN, KNOCKOUT, BRONZE, FINAL
+assignment_type:     AUTOMATIC, MANUAL, LOSER_ASSIGNED
 ```
 
 ---
@@ -325,6 +403,15 @@ trg_update_referee_stats:         referee_assignments, AFTER UPDATE, Incrementa 
 
 # NEW Triggers (Sport Scoring)
 trg_validate_score:             scores, BEFORE INSERT/UPDATE, Valida scores contra reglas del deporte
+
+# NEW Triggers (v3 - Round Robin)
+trg_validate_group_member_count:  group_members, BEFORE INSERT, Max 5 members per group
+trg_unique_person_per_tournament: group_members, BEFORE INSERT, One group per person per tournament
+trg_unique_seed_per_group:        group_members, BEFORE INSERT/UPDATE, Unique seeds within group
+trg_update_group_status:          matches, AFTER UPDATE, Auto-update group status on completion
+trg_validate_intra_group_referee:  referee_assignments, BEFORE INSERT/UPDATE, Same-group only for RR
+trg_track_loser_for_referee:      matches, AFTER UPDATE, Store loser for next match assignment
+trg_validate_score_tt_rules:      scores, BEFORE INSERT/UPDATE, TT win-by-2 validation
 ```
 
 ---
@@ -409,6 +496,70 @@ calculate_set_winner(p_sets JSONB, p_scoring_config JSONB)
 is_tiebreak(p_game_a INTEGER, p_game_b INTEGER, p_scoring_config JSONB)
   → BOOLEAN
   → Detecta si los scores indican situación de tiebreak
+```
+
+---
+
+## RPCs de Round Robin *(NEW)*
+
+### create_round_robin_group()
+```yaml
+create_round_robin_group(p_tournament_id, p_name, p_member_entry_ids[], p_advancement_count)
+  → TABLE(group_id UUID, match_ids UUID[])
+  → Crea grupo + miembros + matches automáticamente
+  → Valida: 3-5 miembros, un grupo por persona
+```
+
+### generate_round_robin_matches()
+```yaml
+generate_round_robin_matches(p_group_id)
+  → UUID[]
+  → Genera schedule round-robin: n*(n-1)/2 matches
+  → Linkea next_match_id para tracking de "perdedor arbitra"
+```
+
+### suggest_intra_group_referee()
+```yaml
+suggest_intra_group_referee(p_match_id)
+  → TABLE(user_id, assignment_type, reason)
+  → Prioridad: 1) Perdedor anterior, 2) BYE en ronda, 3) Menos arbitrajes
+```
+
+### assign_loser_as_referee()
+```yaml
+assign_loser_as_referee(p_match_id)
+  → BOOLEAN
+  → Asigna automáticamente el perdedor como referee del próximo partido
+  → FALSE si cross-group (no se puede asignar)
+```
+
+### calculate_group_standings()
+```yaml
+calculate_group_standings(p_group_id)
+  → TABLE(rank, member_id, person_id, matches_played, wins, losses, points_for, points_against, point_diff, total_points)
+  → Calcula clasificación según: pts por victoria (3), diff de puntos, puntos a favor
+```
+
+### add_member_to_group()
+```yaml
+add_member_to_group(p_group_id, p_entry_id, p_seed)
+  → UUID (member_id)
+  → Agrega miembro con validación de límites
+```
+
+### generate_bracket_from_groups()
+```yaml
+generate_bracket_from_groups(p_tournament_id)
+  → UUID (bracket_id)
+  → Genera bracket de KO desde grupos completados
+  → Seeding según posición en grupo + ELO
+```
+
+### get_available_referees()
+```yaml
+get_available_referees(p_match_id)
+  → TABLE(user_id, person_id, display_name, matches_refereed, is_available, reason_unavailable)
+  → Lista de referees disponibles del mismo grupo
 ```
 
 ---
