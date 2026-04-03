@@ -1,20 +1,20 @@
 # Migration Index
 
-**Estado actualizado**: 2026-04-03
+**Estado actualizado**: 2026-04-02
 
 ---
 
 ## Resumen
 
 ```yaml
-Total migrations: 50
-Completadas: 50
+Total migrations: 51
+Completadas: 51
 Pendientes: 0
 ```
 
 ---
 
-## Migration Map (38-50)
+## Migration Map (38-51)
 
 ```yaml
 38: round_robin_tables.sql         - Round Robin Groups schema
@@ -29,12 +29,13 @@ Pendientes: 0
 47: add_score_validation.sql        - validate_score trigger
 48: rls_sensitive_tables.sql        - RLS on athlete_stats, payments, match_sets
 49: rpc_security_definer.sql        - SECURITY DEFINER on 10 RPCs
-50: elo_history_trigger.sql        - Auto-populate elo_history
+50: elo_history_trigger.sql        - Auto-populate elo_history, RLS policies
+51: post_match_feedback.sql        - Achievements, share cards, leaderboard
 ```
 
 ---
 
-## Migration Map Completo (1-50)
+## Migration Map Completo (1-51)
 
 ```yaml
 0001: foundation.sql                 - Core schema (squashed from 40)
@@ -42,6 +43,7 @@ Pendientes: 0
 0041-043: Score Audit & RLS Fix    - recorded_by, RR policies, constraints
 0044-047: Sport Scoring Engine      - ELO history, scoring config, validation
 0048-050: Security Hardening        - RLS, SECURITY DEFINER, triggers
+0051: Post-Match Feedback          - Achievements, share cards, leaderboard
 ```
 
 ---

@@ -19,40 +19,39 @@ SET search_path TO extensions, public;
 -- 1. SEED ACHIEVEMENTS
 -- ─────────────────────────────────────────────────────────
 
--- Insert predefined achievements (using icon_slug instead of icon)
-INSERT INTO achievements (id, code, name, description, icon_slug, criteria_json) VALUES
+-- Insert predefined achievements (only columns that exist in achievements table)
+INSERT INTO achievements (id, code, name, description, icon_slug) VALUES
 -- Victory Achievements
-('a1000000-0000-0000-0000-000000000001', 'FIRST_BLOOD', 'First Blood', 'Win your first match', 'target', '{"type": "match_count", "value": 1}'),
-('a1000000-0000-0000-0000-000000000002', 'UNSTOPPABLE', 'Unstoppable', 'Win 5 matches in a row', 'flame', '{"type": "streak", "value": 5}'),
-('a1000000-0000-0000-0000-000000000003', 'DOMINANT', 'Dominant', 'Win 10 matches in a row', 'zap', '{"type": "streak", "value": 10}'),
-('a1000000-0000-0000-0000-000000000004', 'CHAMPION', 'Champion', 'Win a tournament', 'trophy', '{"type": "tournament_wins", "value": 1}'),
+('a1000000-0000-0000-0000-000000000001', 'FIRST_BLOOD', 'First Blood', 'Win your first match', 'target'),
+('a1000000-0000-0000-0000-000000000002', 'UNSTOPPABLE', 'Unstoppable', 'Win 5 matches in a row', 'flame'),
+('a1000000-0000-0000-0000-000000000003', 'DOMINANT', 'Dominant', 'Win 10 matches in a row', 'zap'),
+('a1000000-0000-0000-0000-000000000004', 'CHAMPION', 'Champion', 'Win a tournament', 'trophy'),
 
 -- Upset Achievements
-('a2000000-0000-0000-0000-000000000001', 'GIANT_KILLER', 'Giant Killer', 'Beat someone 200+ ELO higher', 'skull', '{"type": "elo_diff", "value": 200}'),
-('a2000000-0000-0000-0000-000000000002', 'DARK_HORSE', 'Dark Horse', 'Beat someone 300+ ELO higher', 'star', '{"type": "elo_diff", "value": 300}'),
-('a2000000-0000-0000-0000-000000000003', 'MERRY_MEN', 'Merry Men', 'Beat 3 players with 200+ higher ELO', 'swords', '{"type": "upsets_count", "value": 3}'),
+('a2000000-0000-0000-0000-000000000001', 'GIANT_KILLER', 'Giant Killer', 'Beat someone 200+ ELO higher', 'skull'),
+('a2000000-0000-0000-0000-000000000002', 'DARK_HORSE', 'Dark Horse', 'Beat someone 300+ ELO higher', 'star'),
+('a2000000-0000-0000-0000-000000000003', 'MERRY_MEN', 'Merry Men', 'Beat 3 players with 200+ higher ELO', 'swords'),
 
 -- Milestone Achievements
-('a3000000-0000-0000-0000-000000000001', 'IRON_MAN', 'Iron Man', 'Play 50 matches', 'dumbbell', '{"type": "matches", "value": 50}'),
-('a3000000-0000-0000-0000-000000000002', 'VETERAN', 'Veteran', 'Play 100 matches', 'medal', '{"type": "matches", "value": 100}'),
-('a3000000-0000-0000-0000-000000000003', 'CENTURION', 'Centurion', 'Play 500 matches', 'hundred', '{"type": "matches", "value": 500}'),
+('a3000000-0000-0000-0000-000000000001', 'IRON_MAN', 'Iron Man', 'Play 50 matches', 'dumbbell'),
+('a3000000-0000-0000-0000-000000000002', 'VETERAN', 'Veteran', 'Play 100 matches', 'medal'),
+('a3000000-0000-0000-0000-000000000003', 'CENTURION', 'Centurion', 'Play 500 matches', 'hundred'),
 
 -- ELO Milestones
-('a4000000-0000-0000-0000-000000000001', 'RISE_ABOVE', 'Rise Above', 'Reach 1100 ELO', 'trending-up', '{"type": "elo", "value": 1100}'),
-('a4000000-0000-0000-0000-000000000002', 'ELITE', 'Elite', 'Reach 1200 ELO', 'star', '{"type": "elo", "value": 1200}'),
-('a4000000-0000-0000-0000-000000000003', 'MASTER', 'Master', 'Reach 1300 ELO', 'sparkles', '{"type": "elo", "value": 1300}'),
-('a4000000-0000-0000-0000-000000000004', 'LEGEND', 'Legend', 'Reach 1400 ELO', 'crown', '{"type": "elo", "value": 1400}'),
+('a4000000-0000-0000-0000-000000000001', 'RISE_ABOVE', 'Rise Above', 'Reach 1100 ELO', 'trending-up'),
+('a4000000-0000-0000-0000-000000000002', 'ELITE', 'Elite', 'Reach 1200 ELO', 'star'),
+('a4000000-0000-0000-0000-000000000003', 'MASTER', 'Master', 'Reach 1300 ELO', 'sparkles'),
+('a4000000-0000-0000-0000-000000000004', 'LEGEND', 'Legend', 'Reach 1400 ELO', 'crown'),
 
 -- Participation
-('a5000000-0000-0000-0000-000000000001', 'COMPETITOR', 'Competitor', 'Complete your first tournament', 'award', '{"type": "tournaments", "value": 1}'),
-('a5000000-0000-0000-0000-000000000002', 'REGULAR', 'Regular', 'Complete 10 tournaments', 'circle', '{"type": "tournaments", "value": 10}'),
-('a5000000-0000-0000-0000-000000000003', 'TOURNAMENT_PRO', 'Tournament Pro', 'Complete 50 tournaments', 'trophy-2', '{"type": "tournaments", "value": 50}')
+('a5000000-0000-0000-0000-000000000001', 'COMPETITOR', 'Competitor', 'Complete your first tournament', 'award'),
+('a5000000-0000-0000-0000-000000000002', 'REGULAR', 'Regular', 'Complete 10 tournaments', 'circle'),
+('a5000000-0000-0000-0000-000000000003', 'TOURNAMENT_PRO', 'Tournament Pro', 'Complete 50 tournaments', 'trophy-2')
 
 ON CONFLICT (code) DO UPDATE SET
     name = EXCLUDED.name,
     description = EXCLUDED.description,
-    icon_slug = EXCLUDED.icon_slug,
-    criteria_json = EXCLUDED.criteria_json;
+    icon_slug = EXCLUDED.icon_slug;
 
 -- ─────────────────────────────────────────────────────────
 -- 2. FUNCTION: Award Achievements
@@ -255,8 +254,7 @@ BEGIN
             'code', a.code,
             'name', a.name,
             'description', a.description,
-            'icon', a.icon,
-            'elo_bonus', a.elo_bonus
+            'icon_slug', a.icon_slug
         )
     ), '[]'::JSONB)
     INTO v_new_achievements
@@ -315,14 +313,7 @@ BEGIN
     SELECT JSONB_BUILD_OBJECT(
         'current_elo', current_elo,
         'matches_played', matches_played,
-        'matches_won', matches_won,
-        'rank', rank,
-        'win_rate', 
-            CASE 
-                WHEN matches_played > 0 
-                THEN ROUND((matches_won::NUMERIC / matches_played) * 100, 1)
-                ELSE 0 
-            END
+        'rank', rank
     ) INTO v_stats
     FROM athlete_stats
     WHERE person_id = p_person_id AND sport_id = p_sport_id;
@@ -358,7 +349,7 @@ BEGIN
         JSONB_BUILD_OBJECT(
             'code', a.code,
             'name', a.name,
-            'icon', a.icon
+            'icon_slug', a.icon_slug
         )
     ), '[]'::JSONB)
     INTO v_achievements
@@ -569,7 +560,7 @@ BEGIN
             p.nickname as person_name,
             ast.current_elo,
             ast.matches_played,
-            (SELECT COUNT(*) FROM player_achievements WHERE person_id = ast.person_id) as ach_count
+            (SELECT COUNT(*) FROM player_achievements pa WHERE pa.person_id = ast.person_id) as ach_count
         FROM athlete_stats ast
         JOIN persons p ON p.id = ast.person_id
         WHERE ast.sport_id = p_sport_id
@@ -586,54 +577,10 @@ BEGIN
 END;
 $$;
 
--- ─────────────────────────────────────────────────────────
--- VERIFICATION
--- ─────────────────────────────────────────────────────────
-
-\echo ''
-\echo '=== Post-Match Feedback Backend ==='
-
--- Check achievements seeded
-SELECT 
-    CASE 
-        WHEN COUNT(*) > 0 THEN '✅ Achievements seeded: ' || COUNT(*) || ' achievements'
-        ELSE '❌ No achievements found'
-    END as result
-FROM achievements;
-
--- Check achievement count by icon_slug
-SELECT icon_slug as category, COUNT(*) as count FROM achievements GROUP BY icon_slug;
-
--- Check trigger exists
-SELECT 
-    CASE 
-        WHEN EXISTS (
-            SELECT 1 FROM pg_trigger 
-            WHERE tgname = 'trg_award_match_achievements'
-        ) THEN '✅ trg_award_match_achievements trigger exists'
-        ELSE '❌ Trigger missing'
-    END as result;
-
--- Check RPCs exist
-SELECT proname FROM pg_proc
-WHERE proname IN (
-    'get_post_match_summary',
-    'get_share_card_data',
-    'get_leaderboard',
-    'record_tournament_participation'
-);
-
--- Check views exist
-SELECT table_name FROM information_schema.views
-WHERE table_name IN ('v_elo_history_with_context', 'v_player_profile_summary');
-
--- Check RLS on achievements
-SELECT 
-    CASE 
-        WHEN relrowsecurity THEN '✅ RLS enabled on achievements'
-        ELSE '❌ RLS not enabled'
-    END as result
-FROM pg_class WHERE relname = 'achievements';
-
-\echo ''
-\echo '=== Post-Match Feedback Backend Complete ==='
+-- ============================================================
+-- NOTE: Verification queries removed from migration file.
+-- Run these manually for debugging:
+--   psql ... -c "SELECT COUNT(*) FROM achievements;"
+--   psql ... -c "SELECT tgname FROM pg_trigger WHERE tgname LIKE 'trg_%';"
+-- END OF MIGRATION
+-- ============================================================

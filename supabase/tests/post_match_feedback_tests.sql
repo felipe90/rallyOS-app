@@ -18,18 +18,18 @@ SELECT
         WHEN COUNT(*) >= 15 THEN '✅ PASS: ' || COUNT(*) || ' achievements seeded'
         ELSE '❌ FAIL: Only ' || COUNT(*) || ' achievements'
     END as result,
-    'Categories: ' || string_agg(DISTINCT category, ', ') as categories
+    'Icon types: ' || string_agg(DISTINCT icon_slug, ', ') as icon_types
 FROM achievements;
 
--- TEST 2: Achievement Categories
+-- TEST 2: Achievement Categories (grouped by icon_slug)
 \echo ''
 \echo '[TEST 2] Achievement categories distribution'
 
-SELECT category, COUNT(*) as count, 
+SELECT icon_slug, COUNT(*) as count, 
     string_agg(name, ', ') as achievements
 FROM achievements
-GROUP BY category
-ORDER BY category;
+GROUP BY icon_slug
+ORDER BY icon_slug;
 
 -- TEST 3: RPC get_share_card_data
 \echo ''

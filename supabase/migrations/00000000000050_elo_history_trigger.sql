@@ -110,13 +110,14 @@ USING (
 );
 
 -- Create SELECT policy for organizers to view all history in their tournaments
+-- Path: elo_history -> athlete_stats (by person_id) -> tournaments (by sport_id) -> tournament_staff
 CREATE POLICY "Organizers can view tournament ELO history"
 ON elo_history FOR SELECT TO authenticated
 USING (
     EXISTS (
         SELECT 1 FROM athlete_stats ast
-        JOIN categories c ON c.sport_id = ast.sport_id
-        JOIN tournament_staff ts ON ts.tournament_id = c.tournament_id
+        JOIN tournaments t ON t.sport_id = ast.sport_id
+        JOIN tournament_staff ts ON ts.tournament_id = t.id
         WHERE ast.person_id = elo_history.person_id
         AND ts.user_id = auth.uid()
         AND ts.role = 'ORGANIZER'
@@ -188,89 +189,10 @@ BEGIN
 END;
 $$;
 
--- ─────────────────────────────────────────────────────────
--- VERIFICATION
--- ─────────────────────────────────────────────────────────
-
-\echo ''
-\echo '=== elo_history Trigger Migration ==='
-
--- Check column exists
-SELECT 
-    CASE 
-        WHEN EXISTS (
-            SELECT 1 FROM information_schema.columns 
-            WHERE table_name = 'athlete_stats' AND column_name = 'last_match_id'
-        ) THEN '✅ last_match_id column exists'
-        ELSE '❌ last_match_id column MISSING'
-    END AS result;
-
--- Check trigger exists
-SELECT 
-    CASE 
-        WHEN EXISTS (
-            SELECT 1 FROM pg_trigger 
-            WHERE tgname = 'trg_record_elo_change'
-        ) THEN '✅ trg_record_elo_change trigger exists'
-        ELSE '❌ trg_record_elo_change trigger MISSING'
-    END AS result;
-
--- Check RLS on elo_history
-SELECT 
-    CASE 
-        WHEN relrowsecurity THEN '✅ elo_history has RLS enabled'
-        ELSE '❌ elo_history RLS DISABLED'
-    END AS result
-FROM pg_class WHERE relname = 'elo_history';
-
--- Check elo_history policies
-SELECT 
-    'elo_history policies: ' || COUNT(*) || ' policies' AS result
-FROM pg_policies WHERE tablename = 'elo_history';
-
-\echo ''
-\echo '=== Test: Simulate ELO change ==='
-
--- Test by updating an athlete's ELO
-DO $$
-DECLARE
-    v_before_count INTEGER;
-    v_after_count INTEGER;
-BEGIN
-    -- Count records before
-    SELECT COUNT(*) INTO v_before_count FROM elo_history;
-
-    -- Update ELO (this should trigger the insert)
-    UPDATE athlete_stats
-    SET current_elo = current_elo + 10
-    WHERE person_id = '00000000-0000-0002-0000-000000000001'::UUID
-    AND sport_id = '00000000-0000-0000-0000-000000000001'::UUID;
-
-    -- Count records after
-    SELECT COUNT(*) INTO v_after_count FROM elo_history;
-
-    IF v_after_count > v_before_count THEN
-        RAISE NOTICE '✅ Trigger worked: % new record(s) inserted', v_after_count - v_before_count;
-    ELSE
-        RAISE NOTICE '⚠️  Trigger did not insert: counts before=% after=%', v_before_count, v_after_count;
-    END IF;
-END $$;
-
--- Show latest elo_history records
-SELECT 
-    'Latest elo_history records:' AS info;
-SELECT 
-    p.nickname,
-    eh.previous_elo,
-    eh.new_elo,
-    eh.elo_change,
-    eh.change_type,
-    eh.created_at
-FROM elo_history eh
-JOIN persons p ON p.id = eh.person_id
-ORDER BY eh.created_at DESC
-LIMIT 5;
-
 -- ============================================================
+-- NOTE: Verification queries removed from migration file.
+-- Run these manually for debugging:
+--   psql ... -c "SELECT * FROM elo_history ORDER BY created_at DESC LIMIT 5;"
+--   psql ... -c "SELECT tgname FROM pg_trigger WHERE tgname LIKE 'trg_%';"
 -- END OF MIGRATION
 -- ============================================================
