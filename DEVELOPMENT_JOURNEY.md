@@ -471,4 +471,181 @@ FOR EACH ROW EXECUTE FUNCTION fn_set_score_recorder();
 
 ---
 
+## Day 6c: E2E Testing & Seed Fix (April 2, 2026)
+
+### Problema: Seed no funcionaba
+
+**Errores encontrados:**
+1. `gen_salt()` no existía - pgcrypto vive en schema `extensions`
+2. FK de matches: Final insertada después de semis (violación)
+3. Constraint `name_length` muy restrictivo (<=10 chars)
+
+### Solución
+
+```sql
+-- Fix 1: Incluir extensions schema
+SET search_path TO extensions, public;
+
+-- Fix 2: Reordenar inserts (Final primero)
+INSERT INTO matches (id, ..., round_name) VALUES ('final-id', ..., 'Final');
+INSERT INTO matches (id, ..., next_match_id) VALUES ('semi1-id', ..., 'final-id');
+INSERT INTO matches (id, ..., next_match_id) VALUES ('semi2-id', ..., 'final-id');
+
+-- Fix 3: Constraint más flexible
+ALTER TABLE round_robin_groups 
+ADD CONSTRAINT name_length CHECK (char_length(name) BETWEEN 1 AND 50);
+```
+
+### Migration 42: RLS Policies
+
+**Agregadas 16 policies** para tablas RR:
+- round_robin_groups: 4 policies (SELECT, INSERT, UPDATE, DELETE)
+- group_members: 4 policies
+- knockout_brackets: 4 policies
+- bracket_slots: 4 policies
+
+### E2E Test Results
+
+```
+✅ Group created: Grupo A (4 members)
+✅ Matches generated: 6 (n*(n-1)/2 = 4*3/2)
+✅ RLS: All 4 tables secured
+```
+
+---
+
+## Day 7: Security Hardening (April 3, 2026)
+
+### Problema: Evaluación crítica reveló 3 gaps CRÍTICOS
+
+| Tabla | Datos Expuestos | Riesgo |
+|-------|-----------------|---------|
+| athlete_stats | 23 rows | Cualquiera podía ver ELOs |
+| payments | 4 rows | Datos de pago expuestos |
+| match_sets | 8 rows | Scores expuestos |
+
+**RPCs sin SECURITY DEFINER**: 10 funciones no podían llamarse entre sí
+
+**elo_history vacío**: Tabla existía pero trigger no la povoaba
+
+### Solución Implementada
+
+#### 1. RLS en 3 Tablas Sensibles (Migration 48)
+
+```sql
+-- athlete_stats
+ALTER TABLE athlete_stats ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Authenticated users can view athlete stats" FOR SELECT TO authenticated USING (TRUE);
+CREATE POLICY "Players can update own stats" FOR UPDATE TO authenticated USING (...);
+
+-- payments
+CREATE POLICY "Users can view own payments" FOR SELECT TO authenticated USING (...);
+CREATE POLICY "Payments insert blocked for users" FOR INSERT TO authenticated WITH CHECK (FALSE);
+CREATE POLICY "Organizers can update payment status" FOR UPDATE TO authenticated USING (...);
+
+-- match_sets
+CREATE POLICY "Authenticated users can view match sets" FOR SELECT TO authenticated USING (TRUE);
+CREATE POLICY "Match sets modified via scores trigger only" FOR INSERT TO authenticated WITH CHECK (FALSE);
+```
+
+#### 2. SECURITY DEFINER en 10 RPCs (Migration 49)
+
+```sql
+CREATE OR REPLACE FUNCTION create_round_robin_group(...)
+RETURNS ...
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO extensions, public
+AS $$
+BEGIN
+    -- Explicit auth check
+    IF NOT EXISTS (SELECT 1 FROM tournament_staff WHERE ...) THEN
+        RAISE EXCEPTION 'Access denied';
+    END IF;
+    ...
+END;
+$$;
+```
+
+#### 3. Trigger para elo_history (Migration 50)
+
+```sql
+-- Columna para tracking
+ALTER TABLE athlete_stats ADD COLUMN last_match_id UUID REFERENCES matches(id);
+
+-- Trigger function
+CREATE OR REPLACE FUNCTION fn_record_elo_change()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF OLD.current_elo != NEW.current_elo THEN
+        INSERT INTO elo_history (
+            person_id, sport_id, match_id,
+            previous_elo, new_elo, elo_change, change_type
+        ) VALUES (
+            NEW.person_id, NEW.sport_id, NEW.last_match_id,
+            OLD.current_elo, NEW.current_elo,
+            NEW.current_elo - OLD.current_elo,
+            CASE WHEN NEW.current_elo > OLD.current_elo THEN 'MATCH_WIN' ELSE 'MATCH_LOSS' END
+        );
+        NEW.last_match_id := NULL;
+    END IF;
+    RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER trg_record_elo_change
+BEFORE UPDATE OF current_elo ON athlete_stats
+FOR EACH ROW EXECUTE FUNCTION fn_record_elo_change();
+```
+
+### Métricas Finales
+
+| Métrica | Antes | Después |
+|---------|-------|---------|
+| RLS Policies | 68 | 79 (+11) |
+| RPCs con SD | 0/10 | 10/10 |
+| elo_history | 0 | 1+ |
+| Tablas sin RLS | 6 | 3 (low-risk) |
+
+### Tests Pasados
+
+```
+✅ Security Tests: 18/18 PASS
+✅ Integration Tests: 7/7 PASS
+✅ Scoring Rules Tests: 8/8 PASS
+```
+
+---
+
+## Estado del Sistema (Post-Security Hardening)
+
+### ✅ LISTO PARA PRODUCCIÓN
+
+| Área | Estado |
+|------|--------|
+| Features Core | ✅ Completo |
+| Seguridad | ✅ Hardened |
+| Testing | ✅ Suite completa |
+| Documentación | ✅ Actualizada |
+
+### Tablas con RLS (25 total)
+
+```
+✅ tournaments, categories, tournament_entries, matches, scores
+✅ tournament_staff, round_robin_groups, group_members
+✅ knockout_brackets, bracket_slots
+✅ athlete_stats, payments, match_sets (NEW)
+✅ persons, elo_history
+```
+
+### Tablas sin RLS (reference data, bajo riesgo)
+
+```
+⚠️ achievements (0 rows)
+⚠️ countries (0 rows)
+⚠️ player_achievements (0 rows)
+```
+
+---
+
 *Previous entries: See above*

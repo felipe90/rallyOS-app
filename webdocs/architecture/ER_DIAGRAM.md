@@ -1,7 +1,7 @@
 # RallyOS: Entity Relationship Diagram
 
 **Generated**: 2026-04-02  
-**Last Updated**: Round Robin Groups + Loser-As-Referee COMPLETE
+**Last Updated**: 2026-04-03 (Security Hardening + ELO Audit Trail)
 
 ---
 
@@ -40,23 +40,22 @@ erDiagram
     
     PERSONS ||--o{ ATHLETE_STATS : has
     PERSONS ||--o{ ENTRY_MEMBERS : belongs
-    PERSONS ||--o{ TOURNAMENT_STAFF : works
+    PERSONS ||--o{ TOURNAMENT_STAFF : works_as
     PERSONS ||--o{ PAYMENTS : pays
     PERSONS ||--o{ REFEREE_VOLUNTEERS : volunteers
-    
-    ATHLETE_STATS ||--o{ REFEREE_VOLUNTEERS : tracked
     
     TOURNAMENT_ENTRIES ||--o{ ENTRY_MEMBERS : composed
     TOURNAMENT_ENTRIES ||--o{ PAYMENTS : has
     
-    MATCHES ||--|| SCORES : has
+    MATCHES ||--o{ SCORES : has
     MATCHES ||--o{ MATCH_SETS : tracked
     MATCHES ||--o{ REFEREE_ASSIGNMENTS : assigned
     
     REFEREE_ASSIGNMENTS }o--|| USERS : assigned_by
     
-    ELO_HISTORY }o--|| PERSONS : for
-    ELO_HISTORY }o--|| MATCHES : from
+    ELO_HISTORY }o--|| PERSONS : for_player
+    ELO_HISTORY }o--|| MATCHES : from_match
+    ELO_HISTORY ||--|| SPORTS : for_sport
 ```
 
 ---

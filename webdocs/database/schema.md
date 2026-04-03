@@ -1,7 +1,7 @@
 # RallyOS: Database Schema
 
 **Generated**: 2026-03-31 (Post-Architectural Overhaul)  
-**Last Updated**: 2026-04-02 (Round Robin Groups + Loser-As-Referee Flow)
+**Last Updated**: 2026-04-03 (Security Hardening Complete)
 
 > Para DDL completo ver las migraciones en `supabase/migrations/`
 
@@ -102,9 +102,15 @@ person_id:      uuid FK → persons
 sport_id:       uuid FK → sports
 current_elo:    int
 matches_played: int
-matches_refereed: int  # NEW: For round-robin balancing
+matches_refereed: int  # For round-robin balancing
+last_match_id: uuid FK → matches (nullable)  # NEW: Tracks match for ELO audit
 rank:           athlete_rank (BRONZE, SILVER, GOLD, PLATINUM, DIAMOND)
 UNIQUE(person_id, sport_id)
+
+# RLS Policies:
+# - SELECT: Any authenticated user (public profiles)
+# - UPDATE: Own record only (via persons.user_id link)
+# - INSERT/DELETE: Blocked (via triggers only)
 ```
 
 ### ELO_HISTORY *(Ledger append-only)*
@@ -112,13 +118,20 @@ UNIQUE(person_id, sport_id)
 id:           uuid
 person_id:    uuid FK → persons
 sport_id:     uuid FK → sports
-match_id:     uuid FK → matches (nullable)
-previous_elo:  int
+match_id:     uuid FK → matches (nullable)  # Set by last_match_id
+previous_elo: int
 new_elo:      int
-elo_change:    int
-change_type:   elo_change_type
-opponent_elo_snap: int (for audit)
-created_at:    timestamptz (inmutable)
+elo_change:   int
+change_type:  elo_change_type (MATCH_WIN, MATCH_LOSS, ADJUSTMENT, TOURNAMENT_BONUS)
+created_at:   timestamptz (inmutable)
+
+# Trigger: trg_record_elo_change
+# - Auto-populates on athlete_stats.current_elo UPDATE
+# - Records previous_elo, new_elo, elo_change, change_type
+
+# RLS Policies:
+# - SELECT: User sees own history + organizers see tournament history
+# - INSERT/UPDATE/DELETE: Blocked (via trigger only)
 ```
 
 ---

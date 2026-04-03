@@ -1,7 +1,7 @@
 # RallyOS: Architecture Diagrams
 
 **Generated**: 2026-03-30  
-**Last Updated**: 2026-04-02 (Staff & Player-As-Referee System)
+**Last Updated**: 2026-04-03 (Security Hardening Complete)
 
 ---
 
