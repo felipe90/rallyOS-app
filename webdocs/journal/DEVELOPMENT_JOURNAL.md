@@ -556,3 +556,47 @@ UX/:
 
 *Journal entry updated: 2026-04-02*
 
+---
+
+## 2026-04-02 (Noche) — MVP UX Core Flows & Expert Review
+
+### Session Overview
+
+Realizamos una auditoría de UX profunda (Expert Review) y definimos los 4 flujos críticos restantes para el lanzamiento del MVP, asegurando que la arquitectura de datos y la experiencia del usuario final estén alineadas.
+
+### 🔴 UX EXPERT REVIEW (Audit)
+- **Documento**: `UX/ux_flows_review.md`.
+- **Hallazgo Crítico**: Detectamos una "Sincronización Fantasma". El diseño prometía actualizaciones instantáneas pero los triggers de la DB son lentos.
+- **Solución Propuesta**: Implementar estados de "Syncing" visuales y priorizar una arquitectura Local-First en el futuro.
+
+### 🔵 NEW CORE FLOWS (MVP Ready)
+1. **Landing & Registration**:
+    - **Estrategia**: Dual Auth (Social + Tradicional).
+    - **Step-by-step**: Auth -> Profile Setup (Nick, Deporte, Nivel).
+2. **Player Profile**:
+    - **Foco**: Gamificación. ELO masivo, Sparklines de tendencia y Badges (Giant Slayer).
+3. **Match Scheduling**:
+    - **Vibe**: Información dura. Cero "fluff".
+    - **Content**: "[Equipo] vs [Equipo] | Cancha | Hora". Directo al grano.
+4. **Staff Management**:
+    - **Innovación**: Invitación vía **Magic Links** por WhatsApp para reducir fricción al organizador.
+    - **Feature**: Switcher de rol (Jugador/Referee) con cambio de tema visual para evitar errores catastróficos.
+
+### Files Created
+```yaml
+UX/flows/:
+├── landing-registration.md
+├── player-profile.md
+├── match-scheduling.md
+└── staff-management.md
+
+UX/:
+└── ux_flows_review.md (Expert Audit)
+```
+
+### Architectural Decisions
+- **No-Fluff Policy**: En flujos logísticos (Scheduling), la estética no debe entorpecer la lectura rápida.
+- **WhatsApp-First Delegation**: Uso de enlaces para Staff en lugar de paneles de administración complejos para el MVP.
+
+*Journal entry updated: 2026-04-02*
+
