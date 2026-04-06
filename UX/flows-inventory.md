@@ -1,6 +1,18 @@
 # Flows Inventory: From Intent to Components
 
-Este inventario documenta los 6 macro-flujos críticos de la aplicación, mapeando cada paso a las pantallas involucradas y los componentes atómicos necesarios.
+Este inventario documenta los flujos de la aplicación, mapeando cada paso a las pantallas involucradas y los componentes atómicos necesarios.
+
+## 🚧 POC: Score Sync Live Board
+
+> **Status**: Proof of Concept — Para testear en torneo semanal
+
+### **Feature** ([POC-01](score-sync-live-board.md))
+- **Screens**: `Entry Point`, `Create Session`, `Join Session`, `Scoreboard (Referee)`, `Scoreboard (Viewer)`, `Match Summary`
+- **Primary Action**: Scoring P2P sin internet
+- **Components**: `SessionCodeInput`, `QRCodeDisplay`, `MassiveTapZone`, `ScoreDisplay`, `ConnectionIndicator`
+- **Tech**: WebSocket P2P, Expo, Bluetooth/WiFi Direct
+
+---
 
 ## Macro-Flujo 1: **Tournament Lifecycle (Organizer)**
 
@@ -62,9 +74,13 @@ Este inventario documenta los 6 macro-flujos críticos de la aplicación, mapean
 ## Atomic Components Registry (Top-Down)
 
 | Component | Vibe Pattern | Role |
-|-----------|--------------|------|
+|-----------|--------------|-------|
 | `GlassCard` | Glassmorphism | Base container for all cards |
 | `TactileButton` | Primary Check | Action confirmation |
 | `ScoreBoardLarge` | High contrast | Live score entry |
 | `BracketNode` | Interconnected | Bracket visualization |
 | `ELOHistoryChart`| Dynamic Graphic | Player progression |
+| `SessionCodeInput` | High contrast | Code entry for P2P |
+| `QRCodeDisplay` | High contrast | Quick join mechanism |
+| `MassiveTapZone` | Tactile | One-tap scoring |
+| `ConnectionIndicator` | Status | P2P connection state |
