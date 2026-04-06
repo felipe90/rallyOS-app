@@ -1,8 +1,8 @@
 # 🚧 POC: Score Sync Live Board
 
 > **Estado**: POC (Proof of Concept)  
-> **Versión**: 0.1.0  
-> **Última actualización**: 2026-04-02  
+> **Versión**: 0.2.0  
+> **Última actualización**: 2026-04-06  
 > **Objetivo**: Probar en torneo semanal — validar la experiencia P2P entre referee y jugadores
 
 ---
@@ -38,7 +38,13 @@
 ### 2.3 Flow Principal: Marcar Punto
 
 ```
-[Referee] → [Tap Jugador] → [+1 Point] → [Broadcast] → [Todos los devices actualizan]
+[Referee] → [Tap Jugador] → [+1 Point] → [Regla valida] → [Broadcast] → [Todos actualizan]
+```
+
+### 2.4 Flow Principal: Set Completo
+
+```
+[Punto] → [Valida 11 pts?] → [Sí] → [Sumar set] → [Valida best-of?] → [Sí] → [Match completo] → [Mostrar winner]
 ```
 
 ---
@@ -170,11 +176,10 @@
 
 **Elementos**:
 - Score principal: Sets y Games
-- Botones táctiles gigantes para cada jugador (50% pantalla)
+- Botones táctiles para cada jugador: [+1] [-1]
 - Indicador de quién tiene el servicio
-- Botón "Undo" (último punto)
-- Botón "Finalizar Match"
 - Indicador de conexiones activas
+- Botón "Finalizar Match"
 
 **Estado Visual**:
 ```
@@ -184,41 +189,44 @@
 │                             │
 │       ⬆️ JUGADOR A          │
 │         Miguel              │
+│         ★ Servicio          │
 │                             │
 │       SET   GAME   PTS      │
 │       ─────────────────     │
 │         2      4     12     │
 │                             │
-│   ┌─────────────────────┐   │
-│   │                     │   │
-│   │      TAP PARA       │   │
-│   │      +1 PUNTO       │   │
-│   │                     │   │
-│   │    [Haptic +1]      │   │
-│   │                     │   │
-│   └─────────────────────┘   │
+│   ┌──────────┐ ┌──────────┐│
+│   │          │ │          ││
+│   │    -1    │ │   +1     ││
+│   │  (error) │ │  (punto) ││
+│   │          │ │          ││
+│   └──────────┘ └──────────┘│
 │                             │
 ├─────────────────────────────┤
-│   ┌─────────────────────┐   │
-│   │                     │   │
-│   │      TAP PARA       │   │
-│   │      +1 PUNTO       │   │
-│   │                     │   │
-│   │    [Haptic +1]      │   │
-│   │                     │   │
-│   └─────────────────────┘   │
+│   ┌──────────┐ ┌──────────┐│
+│   │          │ │          ││
+│   │    -1    │ │   +1     ││
+│   │  (error) │ │  (punto) ││
+│   │          │ │          ││
+│   └──────────┘ └──────────┘│
 │                             │
 │       SET   GAME   PTS      │
 │       ─────────────────     │
-│         1      3      8      │
+│         1      3      8     │
 │                             │
 │       ⬇️ JUGADOR B           │
 │         Pablo               │
 │                             │
 ├─────────────────────────────┤
-│  [↩️ Deshacer]    [🏁 Fin]   │
+│         [🏁 Fin Match]      │
 └─────────────────────────────┘
 ```
+
+**Interactions**:
+- **Tap +1**: Incrementa punto para ese jugador
+- **Tap -1**: Decrementa punto (corrige error humano)
+- **Long press +1**: Cambio rápido (para puntos consecutivos)
+- **-1 disabled** cuando puntos = 0
 
 ---
 
@@ -269,9 +277,263 @@
 
 ---
 
-## 4. Component Inventory
+### 3.6 Screen: Match Setup (Referee Config)
 
-### 4.1 Core Components
+**Trigger**: Tap en "Iniciar Match" después de crear sesión
+
+**Elementos**:
+- Nombre Jugador A (input manual o selección)
+- Nombre Jugador B (input manual o selección)
+- Selector de formato: "Al mejor de 3" / "Al mejor de 5"
+- Selector de puntos por set: 11 / 15 / 21
+- Indicador de servicio inicial (quien empieza)
+- Botón "Comenzar"
+
+**Estado Visual**:
+```
+┌─────────────────────────────┐
+│  ← Volver                    │
+│                             │
+│  Configurar Match           │
+│                             │
+│  ─────────────────────────  │
+│                             │
+│  Jugador A                  │
+│  ┌─────────────────────┐   │
+│  │ Miguel              │   │
+│  └─────────────────────┘   │
+│  ○ Servicio                │
+│                             │
+│  Jugador B                  │
+│  ┌─────────────────────┐   │
+│  │ Pablo               │   │
+│  └─────────────────────┘   │
+│  ○ Servicio                │
+│                             │
+│  ─────────────────────────  │
+│  Formato                    │
+│  ┌───────────┐ ┌───────────┐│
+│  │  2 de 3  │→│  3 de 5  │ │
+│  └───────────┘ └───────────┘│
+│                             │
+│  Puntos por set              │
+│  ┌───────────┐ ┌───────────┐│
+│  │   11 pts  │ │   15 pts  │ │
+│  └───────────┘ └───────────┘│
+│                             │
+│  ─────────────────────────  │
+│                             │
+│  ┌─────────────────────┐   │
+│  │    Comenzar Match     │   │
+│  └─────────────────────┘   │
+└─────────────────────────────┘
+```
+
+---
+
+### 3.7 Screen: Set Won (Animation Overlay)
+
+**Trigger**: Cuando un jugador gana un set
+
+**Elementos**:
+- Overlay semi-transparente
+- Mensaje: "¡SET PARA [NOMBRE]!"
+- Score del set recién completado
+- Auto-dismiss después de 3 segundos
+- También aparece en viewers
+
+**Estado Visual**:
+```
+┌─────────────────────────────┐
+│█████████████████████████████│
+│█████████████████████████████│
+│████                     ████│
+│████                     ████│
+│████   ¡SET PARA MIGUEL! ████│
+│████                     ████│
+│████    11 - 7           ████│
+│████                     ████│
+│████  Sets: Miguel 2-1   ████│
+│████                     ████│
+│█████████████████████████████│
+│█████████████████████████████│
+└─────────────────────────────┘
+```
+
+---
+
+### 3.8 Screen: Match Won (Final Overlay)
+
+**Trigger**: Cuando un jugador gana el match
+
+**Elementos**:
+- Overlay full-screen con confetti animation
+- Mensaje: "¡[NOMBRE] GANA EL MATCH!"
+- Score final completo
+- Botón "Ver Resumen"
+- Botón "Nuevo Match" (reinicia con mismos jugadores)
+
+**Estado Visual**:
+```
+┌─────────────────────────────┐
+│                             │
+│        🎉 ¡FELICIDADES! 🎉  │
+│                             │
+│       MIGUEL GANA EL        │
+│          MATCH!             │
+│                             │
+│       Sets: 3-1            │
+│  ┌─────────────────────┐   │
+│  │   Miguel    Pablo   │   │
+│  │      11  -   6      │   │
+│  │      11  -   9      │   │
+│  │       9  -  11      │   │
+│  │      11  -   8      │   │
+│  └─────────────────────┘   │
+│                             │
+│  ┌─────────────────────┐   │
+│  │    Ver Resumen       │   │
+│  └─────────────────────┘   │
+│                             │
+│  ┌─────────────────────┐   │
+│  │     Nuevo Match      │   │
+│  └─────────────────────┘   │
+└─────────────────────────────┘
+```
+
+---
+
+## 4. Scoring Rules Engine
+
+### 4.1 Sport: Table Tennis (Teni de Mesa)
+
+| Config | Valor |
+|--------|-------|
+| Puntos por set | 11 (con 2 de diferencia mínimo) |
+| Best of | 3 o 5 sets |
+| Deuce | Se juega hasta +2 desde 10-10 |
+| Servicio | Cada 2 puntos (alternando) |
+
+### 4.2 Scenarios
+
+#### Scenario 1: Punto normal
+```
+Jugador marca punto antes de 10-10
+→ Punto incrementado
+→ Si puntos < 11, continuar set
+→ Si puntos = 11 Y diferencia ≥ 2, set para ese jugador
+```
+
+#### Scenario 2: Deuce
+```
+Jugador marca punto cuando score = 10-10
+→ Punto incrementado
+→ Si diferencia = 2, set para ese jugador
+→ Si diferencia = 1, continuar (sigue deuce)
+```
+
+#### Scenario 3: Cambio de servicio
+```
+Jugador marca punto Y (puntosA + puntosB) % 2 === 0
+→ Cambiar servicio al otro jugador
+→ (Servicio alterna cada 2 puntos)
+```
+
+#### Scenario 4: Cambio de lado
+```
+Al terminar cada set
+→ Jugadores cambian de lado de la mesa
+→ Servicio inicial: quien perdió el set anterior inicia
+```
+
+#### Scenario 5: Corrección de punto (Error humano)
+```
+Referee toca -1 para jugador A
+→ Decrementar puntos de A en 1
+→ Si puntosA < 0, no hacer nada (ya está en 0)
+→ Si servicio estaba con A Y (puntosA + puntosB) era impar antes del decremento
+   → Restaurar servicio a A
+→ Broadcast actualización a todos
+→ Registrar en history como "CORRECTION"
+```
+
+#### Scenario 6: Reversión de set ganado
+```
+Si referee decrementa puntos Y el set ya estaba ganado (11+ pts con diferencia)
+→ Permitir decremento sin validar
+→ El set queda "en juego" hasta que se alcance nuevamente 11+2 diferencia
+→ Broadcast "SET EN JUEGO"
+```
+
+#### Scenario 7: Deshacer múltiples puntos
+```
+Referee toca "Historia" button
+→ Muestra últimos 5 puntos marcados
+→ Referee puede seleccionar cuál deshacer
+→ Aplica las reglas de decremento inversamente
+```
+
+### 4.3 Data Model
+
+```typescript
+interface ScoringConfig {
+  format: 'BEST_OF_3' | 'BEST_OF_5';
+  pointsPerSet: 11 | 15 | 21;
+  minDifference: 2;
+}
+
+interface SetScore {
+  a: number;
+  b: number;
+}
+
+type PointAction = 'POINT_A' | 'POINT_B' | 'CORRECTION_A' | 'CORRECTION_B';
+
+interface ScoreChange {
+  id: string;                    // UUID único
+  action: PointAction;          // Tipo de acción
+  timestamp: number;             // Unix timestamp
+  pointBefore: SetScore;         // Score antes del cambio
+  pointAfter: SetScore;          // Score después del cambio
+  setWon: boolean;               // Si esta acción ganó un set
+  matchWon: boolean;             // Si esta acción ganó el match
+  correctedBy?: string;           // ID de la corrección que revirtió esta acción
+}
+
+interface MatchState {
+  sessionId: string;
+  players: {
+    a: { name: string; };
+    b: { name: string; };
+  };
+  scoring: ScoringConfig;
+  score: {
+    sets: SetScore;           // Sets ganados: { a: 2, b: 1 }
+    currentSet: SetScore;     // Puntos en set actual: { a: 8, b: 6 }
+    serving: 'A' | 'B';
+  };
+  setHistory: SetScore[];     // Historial de sets: [{a: 11, b: 7}, {a: 9, b: 11}]
+  history: ScoreChange[];      // Últimos 10 cambios (para undo)
+  status: 'CONFIG' | 'LIVE' | 'FINISHED';
+  winner: 'A' | 'B' | null;
+}
+```
+
+### 4.4 State Transitions
+
+```
+CONFIG → LIVE (cuando referee inicia match)
+LIVE → LIVE (en cada punto)
+LIVE → LIVE (al ganar set, resetea currentSet)
+LIVE → FINISHED (al ganar match)
+FINISHED → CONFIG (nuevo match, mismos jugadores)
+```
+
+---
+
+## 5. Component Inventory
+
+### 5.1 Core Components
 
 | Componente | Descripción | Estados |
 |------------|-------------|---------|
@@ -279,12 +541,17 @@
 | `QRCodeDisplay` | Generador de QR | loading, ready |
 | `ConnectionIndicator` | Shows P2P status | connected (green), reconnecting (yellow), disconnected (red) |
 | `ScoreDisplay` | Display gigante de score | normal, point-added (animation), winner (celebration) |
-| `MassiveTapZone` | Zona táctil 50% | idle, pressed (scale-95), disabled |
-| `UndoButton` | Deshacer último punto | idle, disabled (no history) |
+| `ScoreButton` | Botón +/- para cada jugador | idle, pressed, disabled (no -1 when 0) |
+| `ScoreButtonGroup` | Grupo de botones [+1][-1] por jugador | normal, disabled |
+| `HistoryDrawer` | Drawer con últimos puntos | collapsed, expanded |
+| `HistoryItem` | Item individual en historial | point, correction, undo-available |
 | `EndMatchButton` | Finalizar match | idle, confirm-modal |
 | `WaitingRoomList` | Lista de conectados | empty, populated |
+| `ServiceIndicator` | Muestra quién tiene el servicio | playerA, playerB |
+| `SetWonOverlay` | Animación de set ganado | hidden, animating, dismissing |
+| `MatchWonOverlay` | Animación de match ganado | hidden, animating, dismissing |
 
-### 4.2 Design Tokens
+### 5.2 Design Tokens
 
 ```typescript
 const ScoreSyncTokens = {
@@ -426,9 +693,16 @@ interface MatchState {
 - ✅ Crear sesión como referee
 - ✅ Generar código y QR
 - ✅ Unirse con código (input manual)
-- ✅ Marcar puntos (+1)
-- ✅ Broadcast a viewers
-- ✅ Deshacer último punto
+- ✅ Configurar match: formato (2/3/5 sets), puntos (11/15/21)
+- ✅ Marcar puntos (+1) y corregir errores (-1)
+- ✅ Validación de set: 11 pts con 2 de diferencia
+- ✅ Deuce mode: jugar hasta +2 desde 10-10
+- ✅ Servicio alternado cada 2 puntos
+- ✅ Cambio de lado entre sets
+- ✅ Broadcast a viewers en tiempo real
+- ✅ Historial de últimos puntos (para undo)
+- ✅ Set won overlay animation
+- ✅ Match won overlay con confetti
 - ✅ Finalizar match
 - ✅ Ver score en tiempo real (viewer)
 - ✅ Manejo de desconexión/reconexión básica
